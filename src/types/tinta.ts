@@ -63,3 +63,20 @@ export interface CadastroResponse {
   codigo: string;
   nomeProduto: string;
 }
+
+export interface ConsultaHistorico {
+  id: string;
+  cor: string;
+  base: string;
+  tamanho: string;
+  tabelaPreco: string;
+  precoVenda: number;
+  cadastrada: boolean;
+  codigoProduto?: string;
+  timestamp: number;
+  dataFormatada: string;
+  cor_id: number;
+  base_id: number;
+  tamanho_id: number;
+  tabela_preco_id: number;
+}

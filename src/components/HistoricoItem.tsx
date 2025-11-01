@@ -1,0 +1,105 @@
+import { CheckCircle2, AlertCircle, Clock, DollarSign, RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ConsultaHistorico } from "@/types/tinta";
+
+interface HistoricoItemProps {
+  consulta: ConsultaHistorico;
+  onConsultarNovamente: () => void;
+}
+
+const formatarDataRelativa = (timestamp: number): string => {
+  const agora = Date.now();
+  const diff = agora - timestamp;
+  const minutos = Math.floor(diff / 60000);
+  const horas = Math.floor(diff / 3600000);
+  const dias = Math.floor(diff / 86400000);
+
+  if (minutos < 1) return "Agora";
+  if (minutos < 60) return `Há ${minutos} minuto${minutos > 1 ? "s" : ""}`;
+  if (horas < 24) {
+    const data = new Date(timestamp);
+    return `Hoje às ${data.getHours().toString().padStart(2, "0")}:${data
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+  }
+  if (dias === 1) {
+    const data = new Date(timestamp);
+    return `Ontem às ${data.getHours().toString().padStart(2, "0")}:${data
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}`;
+  }
+  
+  const data = new Date(timestamp);
+  return `${data.getDate().toString().padStart(2, "0")}/${(data.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}/${data.getFullYear()}`;
+};
+
+export const HistoricoItem = ({
+  consulta,
+  onConsultarNovamente,
+}: HistoricoItemProps) => {
+  const isNovo = Date.now() - consulta.timestamp < 120000; // 2 minutos
+
+  return (
+    <div className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group">
+      <div className="space-y-2">
+        {/* Nome da tinta */}
+        <div className="flex items-start justify-between gap-2">
+          <p className="font-medium text-sm leading-tight">
+            {consulta.cor} - {consulta.base} - {consulta.tamanho}
+          </p>
+          {isNovo && (
+            <Badge variant="secondary" className="text-xs bg-primary/20 text-primary">
+              NOVO
+            </Badge>
+          )}
+        </div>
+
+        {/* Data */}
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          <span>{formatarDataRelativa(consulta.timestamp)}</span>
+        </div>
+
+        {/* Preço */}
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+          <DollarSign className="h-4 w-4" />
+          <span>R$ {consulta.precoVenda.toFixed(2).replace(".", ",")}</span>
+        </div>
+
+        {/* Status */}
+        <div>
+          {consulta.cadastrada ? (
+            <Badge variant="default" className="bg-success text-success-foreground text-xs">
+              <CheckCircle2 className="mr-1 h-3 w-3" />
+              Cadastrada
+              {consulta.codigoProduto && (
+                <span className="ml-1 font-mono">| {consulta.codigoProduto}</span>
+              )}
+            </Badge>
+          ) : (
+            <Badge variant="default" className="bg-warning text-warning-foreground text-xs">
+              <AlertCircle className="mr-1 h-3 w-3" />
+              Não Cadastrada
+            </Badge>
+          )}
+        </div>
+
+        {/* Botão */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mt-2"
+          onClick={onConsultarNovamente}
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Consultar Novamente
+        </Button>
+      </div>
+    </div>
+  );
+};

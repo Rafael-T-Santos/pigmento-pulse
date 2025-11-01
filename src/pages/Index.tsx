@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
-import { Paintbrush } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Paintbrush, History } from "lucide-react";
 import { ConsultaForm } from "@/components/ConsultaForm";
 import { ResultadoCard } from "@/components/ResultadoCard";
 import { ModalCadastro } from "@/components/ModalCadastro";
+import { HistoricoPanel } from "@/components/HistoricoPanel";
 import {
   ConsultaForm as ConsultaFormType,
   ResultadoConsulta,
   CadastroResponse,
   PigmentoComNome,
+  ConsultaHistorico,
 } from "@/types/tinta";
 import {
   cores,
@@ -22,6 +24,8 @@ import {
   salvarNoCache,
   limparCacheExpirado,
 } from "@/utils/cache";
+import { useHistoricoConsultas } from "@/hooks/useHistoricoConsultas";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const Index = () => {
@@ -32,6 +36,10 @@ const Index = () => {
   const [dadosCadastro, setDadosCadastro] = useState<CadastroResponse | null>(
     null
   );
+  const [historicoPanelAberto, setHistoricoPanelAberto] = useState(false);
+  const resultadoRef = useRef<HTMLDivElement>(null);
+  
+  const { historico, adicionarConsulta, limparHistorico } = useHistoricoConsultas();
 
   // Limpar cache expirado ao carregar
   useEffect(() => {
@@ -91,6 +99,24 @@ const Index = () => {
     salvarNoCache(novoResultado);
     setIsConsultando(false);
     toast.success("Consulta realizada com sucesso!");
+
+    // Adicionar ao histórico
+    const consultaHistorico: ConsultaHistorico = {
+      id: `${Date.now()}-${Math.random()}`,
+      cor: cor.nome,
+      base: base.nome,
+      tamanho: tamanho.nome,
+      tabelaPreco: tabelaPreco.nome,
+      precoVenda,
+      cadastrada: false,
+      timestamp: Date.now(),
+      dataFormatada: new Date().toLocaleString("pt-BR"),
+      cor_id: form.cor_id,
+      base_id: form.base_id,
+      tamanho_id: form.tamanho_id,
+      tabela_preco_id: form.tabela_preco_id,
+    };
+    adicionarConsulta(consultaHistorico);
   };
 
   const cadastrarTinta = async () => {
@@ -124,6 +150,44 @@ const Index = () => {
     setDadosCadastro(response);
     setModalAberto(true);
     setIsCadastrando(false);
+
+    // Atualizar histórico com status de cadastrada
+    const consultaHistorico: ConsultaHistorico = {
+      id: `${Date.now()}-${Math.random()}`,
+      cor: resultado.cor.nome,
+      base: resultado.base.nome,
+      tamanho: resultado.tamanho.nome,
+      tabelaPreco: resultado.tabelaPreco.nome,
+      precoVenda: resultado.precoVenda,
+      cadastrada: true,
+      codigoProduto: response.codigo,
+      timestamp: Date.now(),
+      dataFormatada: new Date().toLocaleString("pt-BR"),
+      cor_id: resultado.cor.id,
+      base_id: resultado.base.id,
+      tamanho_id: resultado.tamanho.id,
+      tabela_preco_id: resultado.tabelaPreco.id,
+    };
+    adicionarConsulta(consultaHistorico);
+  };
+
+  const handleConsultarNovamente = async (consulta: ConsultaHistorico) => {
+    const formData: ConsultaFormType = {
+      cor_id: consulta.cor_id,
+      base_id: consulta.base_id,
+      tamanho_id: consulta.tamanho_id,
+      tabela_preco_id: consulta.tabela_preco_id,
+    };
+    
+    await realizarConsulta(formData);
+    
+    // Scroll suave até o resultado
+    setTimeout(() => {
+      resultadoRef.current?.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "start" 
+      });
+    }, 100);
   };
 
   return (
@@ -131,9 +195,25 @@ const Index = () => {
       {/* Header */}
       <header className="bg-gradient-header shadow-card">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-center gap-3">
-            <Paintbrush className="h-8 w-8 text-white" />
-            <h1 className="text-3xl font-bold text-white">Consulta de Tintas</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Paintbrush className="h-8 w-8 text-white" />
+              <h1 className="text-3xl font-bold text-white">Consulta de Tintas</h1>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setHistoricoPanelAberto(true)}
+              className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+            >
+              <History className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Histórico</span>
+              {historico.length > 0 && (
+                <span className="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                  {historico.length}
+                </span>
+              )}
+            </Button>
           </div>
         </div>
       </header>
@@ -152,11 +232,13 @@ const Index = () => {
 
           {/* Resultado */}
           {resultado && (
-            <ResultadoCard
-              resultado={resultado}
-              onCadastrar={cadastrarTinta}
-              isCadastrando={isCadastrando}
-            />
+            <div ref={resultadoRef}>
+              <ResultadoCard
+                resultado={resultado}
+                onCadastrar={cadastrarTinta}
+                isCadastrando={isCadastrando}
+              />
+            </div>
           )}
         </div>
       </main>
@@ -166,6 +248,15 @@ const Index = () => {
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
         dados={dadosCadastro}
+      />
+
+      {/* Painel de Histórico */}
+      <HistoricoPanel
+        isOpen={historicoPanelAberto}
+        onClose={() => setHistoricoPanelAberto(false)}
+        historico={historico}
+        onLimparHistorico={limparHistorico}
+        onConsultarNovamente={handleConsultarNovamente}
       />
     </div>
   );
