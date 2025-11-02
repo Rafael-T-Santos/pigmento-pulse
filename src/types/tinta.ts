@@ -31,6 +31,9 @@ export interface Cor {
   id: number;
   nome: string;
   codigo: string;
+  codigoDisplay?: string;
+  rgb?: string;
+  ativa?: boolean;
   pigmentos: PigmentoFormula[];
 }
 

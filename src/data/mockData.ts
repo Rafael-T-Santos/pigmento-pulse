@@ -36,7 +36,9 @@ export const cores: Cor[] = [
   {
     id: 1,
     nome: "Branco Neve",
-    codigo: "COR001",
+    codigo: "COR-0025",
+    codigoDisplay: "0025",
+    rgb: "#FFFFFF",
     pigmentos: [
       { pigmento_id: 2, quantidade_ml: 150 },
       { pigmento_id: 5, quantidade_ml: 5 },
@@ -45,7 +47,9 @@ export const cores: Cor[] = [
   {
     id: 2,
     nome: "Azul Celeste",
-    codigo: "COR002",
+    codigo: "COR-0450",
+    codigoDisplay: "0450",
+    rgb: "#87CEEB",
     pigmentos: [
       { pigmento_id: 2, quantidade_ml: 100 },
       { pigmento_id: 5, quantidade_ml: 45 },
@@ -55,7 +59,9 @@ export const cores: Cor[] = [
   {
     id: 3,
     nome: "Vermelho Cereja",
-    codigo: "COR003",
+    codigo: "COR-0089",
+    codigoDisplay: "0089",
+    rgb: "#DC143C",
     pigmentos: [
       { pigmento_id: 3, quantidade_ml: 80 },
       { pigmento_id: 10, quantidade_ml: 15 },
@@ -65,7 +71,9 @@ export const cores: Cor[] = [
   {
     id: 4,
     nome: "Amarelo Girassol",
-    codigo: "COR004",
+    codigo: "COR-0128",
+    codigoDisplay: "0128",
+    rgb: "#FFEF00",
     pigmentos: [
       { pigmento_id: 4, quantidade_ml: 90 },
       { pigmento_id: 7, quantidade_ml: 10 },
@@ -75,7 +83,9 @@ export const cores: Cor[] = [
   {
     id: 5,
     nome: "Verde Primavera",
-    codigo: "COR005",
+    codigo: "COR-0312",
+    codigoDisplay: "0312",
+    rgb: "#00FF7F",
     pigmentos: [
       { pigmento_id: 6, quantidade_ml: 70 },
       { pigmento_id: 4, quantidade_ml: 25 },
@@ -85,7 +95,9 @@ export const cores: Cor[] = [
   {
     id: 6,
     nome: "Cinza Pérola",
-    codigo: "COR006",
+    codigo: "COR-0567",
+    codigoDisplay: "0567",
+    rgb: "#C0C0C0",
     pigmentos: [
       { pigmento_id: 2, quantidade_ml: 120 },
       { pigmento_id: 1, quantidade_ml: 15 },
@@ -95,7 +107,9 @@ export const cores: Cor[] = [
   {
     id: 7,
     nome: "Laranja Sunset",
-    codigo: "COR007",
+    codigo: "COR-0789",
+    codigoDisplay: "0789",
+    rgb: "#FF6347",
     pigmentos: [
       { pigmento_id: 7, quantidade_ml: 75 },
       { pigmento_id: 4, quantidade_ml: 30 },
@@ -106,7 +120,9 @@ export const cores: Cor[] = [
   {
     id: 8,
     nome: "Marrom Chocolate",
-    codigo: "COR008",
+    codigo: "COR-0234",
+    codigoDisplay: "0234",
+    rgb: "#8B4513",
     pigmentos: [
       { pigmento_id: 8, quantidade_ml: 85 },
       { pigmento_id: 1, quantidade_ml: 20 },
@@ -117,7 +133,9 @@ export const cores: Cor[] = [
   {
     id: 9,
     nome: "Violeta Imperial",
-    codigo: "COR009",
+    codigo: "COR-0901",
+    codigoDisplay: "0901",
+    rgb: "#8B00FF",
     pigmentos: [
       { pigmento_id: 9, quantidade_ml: 65 },
       { pigmento_id: 10, quantidade_ml: 25 },
@@ -128,7 +146,9 @@ export const cores: Cor[] = [
   {
     id: 10,
     nome: "Rosa Quartzo",
-    codigo: "COR010",
+    codigo: "COR-0156",
+    codigoDisplay: "0156",
+    rgb: "#FFB6C1",
     pigmentos: [
       { pigmento_id: 2, quantidade_ml: 110 },
       { pigmento_id: 10, quantidade_ml: 30 },
