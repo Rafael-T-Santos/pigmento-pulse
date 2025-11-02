@@ -49,6 +49,7 @@ export interface ResultadoConsulta {
   cadastrada: boolean;
   codigoProduto?: string;
   nomeProduto?: string;
+  quantidade: number;
 }
 
 export interface ConsultaForm {
@@ -56,6 +57,7 @@ export interface ConsultaForm {
   base_id: number;
   tamanho_id: number;
   tabela_preco_id: number;
+  quantidade: number;
 }
 
 export interface CadastroResponse {
@@ -79,4 +81,5 @@ export interface ConsultaHistorico {
   base_id: number;
   tamanho_id: number;
   tabela_preco_id: number;
+  quantidade: number;
 }

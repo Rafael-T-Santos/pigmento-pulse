@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { ConsultaForm as ConsultaFormType } from "@/types/tinta";
 import { cores, bases, tamanhos, tabelasPreco } from "@/data/mockData";
+import { QuantidadeInput } from "@/components/QuantidadeInput";
 
 interface ConsultaFormProps {
   onSubmit: (form: ConsultaFormType) => void;
@@ -18,7 +19,9 @@ interface ConsultaFormProps {
 }
 
 export const ConsultaForm = ({ onSubmit, isLoading }: ConsultaFormProps) => {
-  const [formData, setFormData] = useState<Partial<ConsultaFormType>>({});
+  const [formData, setFormData] = useState<Partial<ConsultaFormType>>({
+    quantidade: 1,
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -143,6 +146,14 @@ export const ConsultaForm = ({ onSubmit, isLoading }: ConsultaFormProps) => {
             <p className="text-sm text-destructive">{errors.tabela_preco_id}</p>
           )}
         </div>
+      </div>
+
+      {/* Quantidade de Latas */}
+      <div className="pt-4 border-t">
+        <QuantidadeInput
+          value={formData.quantidade || 1}
+          onChange={(value) => setFormData((prev) => ({ ...prev, quantidade: value }))}
+        />
       </div>
 
       <div className="flex justify-center pt-4">

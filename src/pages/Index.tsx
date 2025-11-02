@@ -50,6 +50,14 @@ const Index = () => {
     setIsConsultando(true);
     setResultado(null);
 
+    // Validar quantidade
+    const quantidade = form.quantidade || 1;
+    if (quantidade < 1 || quantidade > 999) {
+      toast.error("Quantidade deve ser entre 1 e 999");
+      setIsConsultando(false);
+      return;
+    }
+
     // Simular delay de busca
     await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -93,6 +101,7 @@ const Index = () => {
       pigmentos: pigmentosComNome,
       precoVenda,
       cadastrada: false,
+      quantidade: form.quantidade || 1,
     };
 
     setResultado(novoResultado);
@@ -115,6 +124,7 @@ const Index = () => {
       base_id: form.base_id,
       tamanho_id: form.tamanho_id,
       tabela_preco_id: form.tabela_preco_id,
+      quantidade: form.quantidade || 1,
     };
     adicionarConsulta(consultaHistorico);
   };
@@ -143,6 +153,7 @@ const Index = () => {
       cadastrada: true,
       codigoProduto: response.codigo,
       nomeProduto: response.nomeProduto,
+      quantidade: resultado.quantidade || 1,
     };
 
     setResultado(resultadoAtualizado);
@@ -167,6 +178,7 @@ const Index = () => {
       base_id: resultado.base.id,
       tamanho_id: resultado.tamanho.id,
       tabela_preco_id: resultado.tabelaPreco.id,
+      quantidade: resultado.quantidade || 1,
     };
     adicionarConsulta(consultaHistorico);
   };
@@ -177,6 +189,7 @@ const Index = () => {
       base_id: consulta.base_id,
       tamanho_id: consulta.tamanho_id,
       tabela_preco_id: consulta.tabela_preco_id,
+      quantidade: consulta.quantidade || 1,
     };
     
     await realizarConsulta(formData);

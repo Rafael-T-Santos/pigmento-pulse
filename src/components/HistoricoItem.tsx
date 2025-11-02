@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle, Clock, DollarSign, RefreshCw } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, DollarSign, RefreshCw, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConsultaHistorico } from "@/types/tinta";
@@ -43,17 +43,29 @@ export const HistoricoItem = ({
   onConsultarNovamente,
 }: HistoricoItemProps) => {
   const isNovo = Date.now() - consulta.timestamp < 120000; // 2 minutos
+  const quantidade = consulta.quantidade || 1;
 
   return (
     <div className="p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group">
       <div className="space-y-2">
         {/* Nome da tinta */}
         <div className="flex items-start justify-between gap-2">
-          <p className="font-medium text-sm leading-tight">
-            {consulta.cor} - {consulta.base} - {consulta.tamanho}
-          </p>
+          <div className="flex-1">
+            <p className="font-medium text-sm leading-tight">
+              {quantidade > 1 && `${quantidade}x `}
+              {consulta.cor} - {consulta.base} - {consulta.tamanho}
+            </p>
+            {quantidade > 1 && (
+              <div className="flex items-center gap-1 mt-1">
+                <Package className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  {quantidade} {quantidade === 1 ? 'lata' : 'latas'}
+                </span>
+              </div>
+            )}
+          </div>
           {isNovo && (
-            <Badge variant="secondary" className="text-xs bg-primary/20 text-primary">
+            <Badge variant="secondary" className="text-xs bg-primary/20 text-primary shrink-0">
               NOVO
             </Badge>
           )}
@@ -68,7 +80,16 @@ export const HistoricoItem = ({
         {/* Preço */}
         <div className="flex items-center gap-1.5 text-sm font-semibold text-primary">
           <DollarSign className="h-4 w-4" />
-          <span>R$ {consulta.precoVenda.toFixed(2).replace(".", ",")}</span>
+          <span>
+            R$ {quantidade > 1 
+              ? (consulta.precoVenda * quantidade).toFixed(2).replace(".", ",")
+              : consulta.precoVenda.toFixed(2).replace(".", ",")}
+          </span>
+          {quantidade > 1 && (
+            <span className="text-xs text-muted-foreground font-normal">
+              (R$ {consulta.precoVenda.toFixed(2).replace(".", ",")} cada)
+            </span>
+          )}
         </div>
 
         {/* Status */}
