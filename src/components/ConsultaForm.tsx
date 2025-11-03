@@ -9,10 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ConsultaForm as ConsultaFormType } from "@/types/tinta";
+import { ConsultaForm as ConsultaFormType, Cor } from "@/types/tinta";
 import { cores, bases, tamanhos, tabelasPreco } from "@/data/mockData";
 import { QuantidadeInput } from "@/components/QuantidadeInput";
-import { BuscaCorPorCodigo } from "@/components/BuscaCorPorCodigo";
+import { SeletorCorUnificado } from "@/components/SeletorCorUnificado";
 
 interface ConsultaFormProps {
   onSubmit: (form: ConsultaFormType) => void;
@@ -47,6 +47,11 @@ export const ConsultaForm = ({ onSubmit, isLoading }: ConsultaFormProps) => {
     setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  const handleCorSelecionada = (cor: Cor | null) => {
+    setFormData((prev) => ({ ...prev, cor_id: cor?.id }));
+    setErrors((prev) => ({ ...prev, cor_id: "" }));
+  };
+
   const isFormComplete = 
     formData.cor_id && 
     formData.base_id && 
@@ -56,38 +61,17 @@ export const ConsultaForm = ({ onSubmit, isLoading }: ConsultaFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Busca de Cor por Código */}
+        {/* Seletor de Cor Unificado */}
         <div className="md:col-span-2">
-          <BuscaCorPorCodigo
-            onCorSelecionada={(corId) => updateField("cor_id", corId.toString())}
-            corIdAtual={formData.cor_id}
+          <SeletorCorUnificado
+            cores={cores}
+            corSelecionada={cores.find(c => c.id === formData.cor_id) || null}
+            onCorSelecionada={handleCorSelecionada}
           />
+          {errors.cor_id && (
+            <p className="text-sm text-destructive mt-2">{errors.cor_id}</p>
+          )}
         </div>
-
-        {/* Cor da Tinta - Select por Nome */}
-        {!formData.cor_id && (
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="cor">Buscar por Nome</Label>
-            <Select
-              value={formData.cor_id?.toString()}
-              onValueChange={(value) => updateField("cor_id", value)}
-            >
-              <SelectTrigger id="cor" className={errors.cor_id ? "border-destructive" : ""}>
-                <SelectValue placeholder="Digite ou selecione a cor..." />
-              </SelectTrigger>
-              <SelectContent>
-                {cores.map((cor) => (
-                  <SelectItem key={cor.id} value={cor.id.toString()}>
-                    {cor.nome} ({cor.codigo})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.cor_id && (
-              <p className="text-sm text-destructive">{errors.cor_id}</p>
-            )}
-          </div>
-        )}
 
         {/* Base */}
         <div className="space-y-2">
