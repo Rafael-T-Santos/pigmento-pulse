@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ColorHeader } from "./ColorHeader";
 import {
   Table,
   TableBody,
@@ -64,38 +65,41 @@ Margem: R$ ${margemTotal.toFixed(2).replace('.', ',')} (${percentualMargem.toFix
   };
 
   return (
-    <Card className="shadow-elevated animate-in fade-in-50 duration-500">
-      <CardHeader>
+    <Card className="shadow-elevated animate-in fade-in-50 duration-500 overflow-hidden">
+      <ColorHeader
+        corNome={resultado.cor.nome}
+        corCodigo={resultado.cor.codigoDisplay || resultado.cor.codigo}
+        corRgb={resultado.cor.rgb}
+        baseNome={resultado.base.nome}
+        tamanhoNome={resultado.tamanho.nome}
+        quantidade={quantidade}
+      />
+      
+      <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-            <CardTitle className="text-2xl">
-              {quantidade > 1 && `${quantidade}x `}
-              {resultado.cor.nome} - {resultado.base.nome} - {resultado.tamanho.nome}
-            </CardTitle>
-            <div className="flex gap-2 flex-wrap">
-              {resultado.cadastrada ? (
-                <Badge variant="default" className="bg-success text-success-foreground">
-                  <CheckCircle2 className="mr-1 h-4 w-4" />
-                  Cadastrada
-                </Badge>
-              ) : (
-                <Badge variant="default" className="bg-warning text-warning-foreground">
-                  <AlertCircle className="mr-1 h-4 w-4" />
-                  Não Cadastrada
-                </Badge>
-              )}
-              {isMultiple && (
-                <Badge variant="secondary" className="bg-primary/10 text-primary">
-                  <Package className="mr-1 h-4 w-4" />
-                  Cálculo Múltiplo
-                </Badge>
-              )}
-              {quantidade >= 10 && (
-                <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">
-                  Pedido Grande
-                </Badge>
-              )}
-            </div>
+          <div className="flex gap-2 flex-wrap">
+            {resultado.cadastrada ? (
+              <Badge variant="default" className="bg-success text-success-foreground">
+                <CheckCircle2 className="mr-1 h-4 w-4" />
+                Cadastrada
+              </Badge>
+            ) : (
+              <Badge variant="default" className="bg-warning text-warning-foreground">
+                <AlertCircle className="mr-1 h-4 w-4" />
+                Não Cadastrada
+              </Badge>
+            )}
+            {isMultiple && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                <Package className="mr-1 h-4 w-4" />
+                Cálculo Múltiplo
+              </Badge>
+            )}
+            {quantidade >= 10 && (
+              <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">
+                Pedido Grande
+              </Badge>
+            )}
           </div>
           {resultado.cadastrada && resultado.codigoProduto && (
             <div className="text-right">

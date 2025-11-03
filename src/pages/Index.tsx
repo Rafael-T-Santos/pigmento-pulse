@@ -113,6 +113,7 @@ const Index = () => {
     const consultaHistorico: ConsultaHistorico = {
       id: `${Date.now()}-${Math.random()}`,
       cor: cor.nome,
+      corRgb: cor.rgb,
       base: base.nome,
       tamanho: tamanho.nome,
       tabelaPreco: tabelaPreco.nome,

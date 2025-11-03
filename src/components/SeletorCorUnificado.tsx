@@ -17,6 +17,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Cor } from "@/types/tinta";
 import { cn } from "@/lib/utils";
+import { ColorPreview } from "./ColorPreview";
 
 interface SeletorCorUnificadoProps {
   cores: Cor[];
@@ -74,14 +75,13 @@ export const SeletorCorUnificado = ({
             className="w-full justify-between h-auto min-h-10 py-2"
           >
             {corSelecionada ? (
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                {corSelecionada.rgb && (
-                  <div
-                    className="w-4 h-4 rounded-full border border-border shrink-0"
-                    style={{ backgroundColor: corSelecionada.rgb }}
-                  />
-                )}
-                <span className="truncate">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <ColorPreview 
+                  rgb={corSelecionada.rgb} 
+                  size="lg" 
+                  rounded={true}
+                />
+                <span className="truncate font-medium">
                   {corSelecionada.nome} ({corSelecionada.codigoDisplay || corSelecionada.codigo})
                 </span>
               </div>
@@ -126,12 +126,11 @@ export const SeletorCorUnificado = ({
                     className="cursor-pointer"
                   >
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {cor.rgb && (
-                        <div
-                          className="w-4 h-4 rounded-full border border-border shrink-0"
-                          style={{ backgroundColor: cor.rgb }}
-                        />
-                      )}
+                      <ColorPreview 
+                        rgb={cor.rgb} 
+                        size="md" 
+                        rounded={true}
+                      />
                       <span className="truncate">
                         {cor.nome}
                       </span>

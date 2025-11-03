@@ -72,6 +72,7 @@ export interface CadastroResponse {
 export interface ConsultaHistorico {
   id: string;
   cor: string;
+  corRgb?: string;
   base: string;
   tamanho: string;
   tabelaPreco: string;
