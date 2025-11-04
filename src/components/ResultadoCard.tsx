@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle, Plus, Package, DollarSign, BarChart3, Copy } from "lucide-react";
+import { CheckCircle2, AlertCircle, Plus, Package, DollarSign } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,32 +37,6 @@ export const ResultadoCard = ({
   
   const totalPigmentosGeral = totalPigmentosPorLata * quantidade;
   const valorTotal = resultado.precoVenda * quantidade;
-  const custoPigmentosEstimado = totalPigmentosGeral * 0.30; // Custo estimado
-  const margemTotal = valorTotal - custoPigmentosEstimado;
-  const percentualMargem = (margemTotal / valorTotal) * 100;
-
-  const copiarCalculo = () => {
-    const texto = `CÁLCULO DE TINTAS - ${new Date().toLocaleString('pt-BR')}
-================================
-Tinta: ${resultado.cor.nome} - ${resultado.base.nome} - ${resultado.tamanho.nome}
-Quantidade: ${quantidade} ${quantidade === 1 ? 'lata' : 'latas'}
-
-PIGMENTOS NECESSÁRIOS:
-${resultado.pigmentos
-  .filter((p) => p.quantidade_ml > 0)
-  .map((p) => `- ${p.nome}: ${(p.quantidade_ml * quantidade).toFixed(1)} ml (${p.quantidade_ml.toFixed(1)} ml por lata)`)
-  .join('\n')}
-Total: ${totalPigmentosGeral.toFixed(1)} ml
-
-VALORES:
-Unitário: R$ ${resultado.precoVenda.toFixed(2).replace('.', ',')}
-Total: R$ ${valorTotal.toFixed(2).replace('.', ',')}
-Custo Pigmentos: R$ ${custoPigmentosEstimado.toFixed(2).replace('.', ',')}
-Margem: R$ ${margemTotal.toFixed(2).replace('.', ',')} (${percentualMargem.toFixed(1)}%)`;
-
-    navigator.clipboard.writeText(texto);
-    toast.success("Cálculo copiado para a área de transferência!");
-  };
 
   return (
     <Card className="shadow-elevated animate-in fade-in-50 duration-500 overflow-hidden">
@@ -125,21 +99,9 @@ Margem: R$ ${margemTotal.toFixed(2).replace('.', ',')} (${percentualMargem.toFix
 
         {/* Fórmula de Pigmentos */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-lg">
-              Pigmentos Necessários {isMultiple && "- TOTAL"}
-            </h3>
-            {isMultiple && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={copiarCalculo}
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Copiar Cálculo
-              </Button>
-            )}
-          </div>
+          <h3 className="font-semibold text-lg">
+            Pigmentos Necessários {isMultiple && "- TOTAL"}
+          </h3>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -202,60 +164,31 @@ Margem: R$ ${margemTotal.toFixed(2).replace('.', ',')} (${percentualMargem.toFix
 
         {/* Precificação */}
         {isMultiple ? (
-          <div className="space-y-4">
-            <div className="bg-accent/30 rounded-lg p-6 space-y-4">
-              <div className="flex items-center gap-2 mb-4">
-                <DollarSign className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-lg">Valores Financeiros</h3>
+          <div className="bg-accent/30 rounded-lg p-6 space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-lg">Valores</h3>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Valor Unitário:</span>
+                <span className="font-medium">R$ {resultado.precoVenda.toFixed(2).replace(".", ",")}</span>
               </div>
               
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Valor Unitário:</span>
-                  <span className="font-medium">R$ {resultado.precoVenda.toFixed(2).replace(".", ",")}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Quantidade:</span>
-                  <span className="font-medium">× {quantidade} {quantidade === 1 ? 'lata' : 'latas'}</span>
-                </div>
-                
-                <Separator className="my-2" />
-                
-                <div className="flex justify-between items-center bg-success/10 rounded-md p-3 border border-success/20">
-                  <span className="font-semibold text-lg">Valor Total:</span>
-                  <span className="text-2xl font-bold text-success">
-                    R$ {valorTotal.toFixed(2).replace(".", ",")}
-                  </span>
-                </div>
-                
-                <Separator className="my-2" />
-                
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Custo Pigmentos:</span>
-                  <span>R$ {custoPigmentosEstimado.toFixed(2).replace(".", ",")}</span>
-                </div>
-                
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Margem Total:</span>
-                  <span className="text-success font-medium">
-                    R$ {margemTotal.toFixed(2).replace(".", ",")} ({percentualMargem.toFixed(1)}%)
-                  </span>
-                </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Quantidade:</span>
+                <span className="font-medium">× {quantidade} {quantidade === 1 ? 'lata' : 'latas'}</span>
               </div>
-            </div>
-
-            {/* Resumo Rápido */}
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart3 className="h-4 w-4 text-primary" />
-                <h4 className="font-semibold text-sm">Resumo Rápido</h4>
+              
+              <Separator className="my-2" />
+              
+              <div className="flex justify-between items-center bg-success/10 rounded-md p-3 border border-success/20">
+                <span className="font-semibold text-lg">Valor Total:</span>
+                <span className="text-2xl font-bold text-success">
+                  R$ {valorTotal.toFixed(2).replace(".", ",")}
+                </span>
               </div>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>• Total de pigmentos: {totalPigmentosGeral.toFixed(1)} ml</li>
-                <li>• Custo médio por lata: R$ {(custoPigmentosEstimado / quantidade).toFixed(2).replace(".", ",")}</li>
-                <li>• Receita total: R$ {valorTotal.toFixed(2).replace(".", ",")}</li>
-              </ul>
             </div>
           </div>
         ) : (
