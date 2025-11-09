@@ -63,6 +63,10 @@ export const HistoricoItem = ({
                 {quantidade > 1 && `${quantidade}x `}
                 {consulta.cor} - {consulta.base} - {consulta.tamanho}
               </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {consulta.tabelaPreco}
+                {consulta.tributacao && ` • ${consulta.tributacao}`}
+              </p>
               {quantidade > 1 && (
                 <div className="flex items-center gap-1 mt-1">
                   <Package className="h-3 w-3 text-muted-foreground" />

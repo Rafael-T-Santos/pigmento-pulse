@@ -63,6 +63,11 @@ export const ResultadoCard = ({
                 Não Cadastrada
               </Badge>
             )}
+            {resultado.tributacao && (
+              <Badge variant="outline" className="border-primary/30 text-primary">
+                {resultado.tributacao.nome}
+              </Badge>
+              )}
             {isMultiple && (
               <Badge variant="secondary" className="bg-primary/10 text-primary">
                 <Package className="mr-1 h-4 w-4" />

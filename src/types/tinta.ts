@@ -1,3 +1,8 @@
+export interface Tributacao {
+  id: number;
+  nome: string;
+}
+
 export interface Pigmento {
   id: number;
   nome: string;
@@ -34,7 +39,6 @@ export interface Cor {
   codigoDisplay?: string;
   rgb?: string;
   ativa?: boolean;
-  pigmentos: PigmentoFormula[];
 }
 
 export interface PigmentoComNome extends PigmentoFormula {
@@ -47,6 +51,7 @@ export interface ResultadoConsulta {
   base: Base;
   tamanho: Tamanho;
   tabelaPreco: TabelaPreco;
+  tributacao?: Tributacao;
   pigmentos: PigmentoComNome[];
   precoVenda: number;
   cadastrada: boolean;
@@ -60,6 +65,7 @@ export interface ConsultaForm {
   base_id: number;
   tamanho_id: number;
   tabela_preco_id: number;
+  tributacao_id?: number;
   quantidade: number;
 }
 
@@ -76,6 +82,7 @@ export interface ConsultaHistorico {
   base: string;
   tamanho: string;
   tabelaPreco: string;
+  tributacao?: string;
   precoVenda: number;
   cadastrada: boolean;
   codigoProduto?: string;
@@ -85,5 +92,6 @@ export interface ConsultaHistorico {
   base_id: number;
   tamanho_id: number;
   tabela_preco_id: number;
+  tributacao_id?: number;
   quantidade: number;
 }

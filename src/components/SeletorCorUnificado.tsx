@@ -118,7 +118,7 @@ export const SeletorCorUnificado = ({
                 </div>
               </CommandEmpty>
               <CommandGroup>
-                {coresFiltradas.slice(0, 50).map((cor) => (
+                {coresFiltradas.slice(0, 100).map((cor) => (
                   <CommandItem
                     key={cor.id}
                     value={cor.id.toString()}

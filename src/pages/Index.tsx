@@ -10,15 +10,21 @@ import {
   CadastroResponse,
   PigmentoComNome,
   ConsultaHistorico,
+  Cor
 } from "@/types/tinta";
 import {
-  cores,
   bases,
   tamanhos,
   tabelasPreco,
+  tributacoes,
   pigmentos,
   calcularPreco,
 } from "@/data/mockData";
+import {
+  carregarDadosFormulas,
+  buscarFormula,
+  getCores,
+} from "@/data/formulaService";
 import {
   buscarNoCache,
   salvarNoCache,
@@ -41,9 +47,28 @@ const Index = () => {
   
   const { historico, adicionarConsulta, limparHistorico } = useHistoricoConsultas();
 
+  // Estados para dados dinâmicos
+  const [isFormulasLoading, setIsFormulasLoading] = useState(true);
+  const [cores, setCores] = useState<Cor[]>([]); // Apenas 'cores' é dinâmico
+
   // Limpar cache expirado ao carregar
   useEffect(() => {
     limparCacheExpirado();
+    
+    const carregarDados = async () => {
+      try {
+        await carregarDadosFormulas(); // Carrega CSV e processa cores
+        setCores(getCores()); // Busca as cores processadas
+      } catch (error) {
+        console.error(error);
+        toast.error("Falha ao carregar arquivo de fórmulas.", {
+          description: "Verifique o console e se o arquivo formulas.csv está na pasta /public",
+        });
+      } finally {
+        setIsFormulasLoading(false); // Libera o formulário
+      }
+    };
+    carregarDados();
   }, []);
 
   const realizarConsulta = async (form: ConsultaFormType) => {
@@ -71,24 +96,23 @@ const Index = () => {
     }
 
     // Buscar dados
-    const cor = cores.find((c) => c.id === form.cor_id)!;
-    const base = bases.find((b) => b.id === form.base_id)!;
-    const tamanho = tamanhos.find((t) => t.id === form.tamanho_id)!;
-    const tabelaPreco = tabelasPreco.find((tp) => tp.id === form.tabela_preco_id)!;
+    const cor = cores.find((c) => c.id === form.cor_id)!; // Do state
+    const base = bases.find((b) => b.id === form.base_id)!; // Do mockData import
+    const tamanho = tamanhos.find((t) => t.id === form.tamanho_id)!; // Do mockData import
+    const tabelaPreco = tabelasPreco.find((tp) => tp.id === form.tabela_preco_id)!; // Do mockData import
+    const tributacao = form.tributacao_id
+      ? tributacoes.find((t) => t.id === form.tributacao_id)!
+      : undefined;
 
-    // Calcular pigmentos com nomes e percentuais
-    const totalPigmentos = cor.pigmentos.reduce(
-      (sum, p) => sum + p.quantidade_ml,
-      0
-    );
-    const pigmentosComNome: PigmentoComNome[] = cor.pigmentos.map((p) => {
-      const pigmento = pigmentos.find((pig) => pig.id === p.pigmento_id)!;
-      return {
-        ...p,
-        nome: pigmento.nome,
-        percentual: (p.quantidade_ml / totalPigmentos) * 100,
-      };
-    });
+    const pigmentosComNome = buscarFormula(cor, base, tamanho);
+
+    if (pigmentosComNome.length === 0) {
+      toast.error("Fórmula não encontrada", {
+        description: "Não existe fórmula para esta combinação de cor, base e tamanho no arquivo CSV.",
+      });
+      setIsConsultando(false);
+      return;
+    }
 
     // Calcular preço
     const precoVenda = calcularPreco(tamanho, tabelaPreco);
@@ -98,6 +122,7 @@ const Index = () => {
       base,
       tamanho,
       tabelaPreco,
+      tributacao,
       pigmentos: pigmentosComNome,
       precoVenda,
       cadastrada: false,
@@ -117,6 +142,7 @@ const Index = () => {
       base: base.nome,
       tamanho: tamanho.nome,
       tabelaPreco: tabelaPreco.nome,
+      tributacao: tributacao?.nome,
       precoVenda,
       cadastrada: false,
       timestamp: Date.now(),
@@ -125,6 +151,7 @@ const Index = () => {
       base_id: form.base_id,
       tamanho_id: form.tamanho_id,
       tabela_preco_id: form.tabela_preco_id,
+      tributacao_id: form.tributacao_id,
       quantidade: form.quantidade || 1,
     };
     adicionarConsulta(consultaHistorico);
@@ -154,7 +181,7 @@ const Index = () => {
       cadastrada: true,
       codigoProduto: response.codigo,
       nomeProduto: response.nomeProduto,
-      quantidade: resultado.quantidade || 1,
+      quantidade: resultado.quantidade || 1
     };
 
     setResultado(resultadoAtualizado);
@@ -170,6 +197,7 @@ const Index = () => {
       base: resultado.base.nome,
       tamanho: resultado.tamanho.nome,
       tabelaPreco: resultado.tabelaPreco.nome,
+      tributacao: resultado.tributacao?.nome,
       precoVenda: resultado.precoVenda,
       cadastrada: true,
       codigoProduto: response.codigo,
@@ -179,6 +207,7 @@ const Index = () => {
       base_id: resultado.base.id,
       tamanho_id: resultado.tamanho.id,
       tabela_preco_id: resultado.tabelaPreco.id,
+      tributacao_id: resultado.tributacao?.id,
       quantidade: resultado.quantidade || 1,
     };
     adicionarConsulta(consultaHistorico);
@@ -190,6 +219,7 @@ const Index = () => {
       base_id: consulta.base_id,
       tamanho_id: consulta.tamanho_id,
       tabela_preco_id: consulta.tabela_preco_id,
+      tributacao_id: consulta.tributacao_id,
       quantidade: consulta.quantidade || 1,
     };
     
@@ -241,6 +271,8 @@ const Index = () => {
             <ConsultaForm
               onSubmit={realizarConsulta}
               isLoading={isConsultando}
+              isDataLoading={isFormulasLoading} // Passa o status de loading
+              cores={cores} // Passa as cores carregadas
             />
           </div>
 
