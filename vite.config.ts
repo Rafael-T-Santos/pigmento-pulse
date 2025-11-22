@@ -8,7 +8,15 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-  },
+  // Adiciona o proxy para o backend
+    proxy: {
+        '/api': {
+        target: 'http://localhost:5000', // URL do backend Flask
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {

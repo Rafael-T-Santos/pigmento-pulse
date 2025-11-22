@@ -83,78 +83,115 @@ const Index = () => {
       return;
     }
 
-    // Simular delay de busca
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    // Buscar no cache primeiro
-    const cache = buscarNoCache(form.cor_id, form.base_id, form.tamanho_id);
-    if (cache) {
-      setResultado(cache);
-      setIsConsultando(false);
-      toast.success("Consulta realizada (dados em cache)");
-      return;
-    }
-
-    // Buscar dados
-    const cor = cores.find((c) => c.id === form.cor_id)!; // Do state
-    const base = bases.find((b) => b.id === form.base_id)!; // Do mockData import
-    const tamanho = tamanhos.find((t) => t.id === form.tamanho_id)!; // Do mockData import
-    const tabelaPreco = tabelasPreco.find((tp) => tp.id === form.tabela_preco_id)!; // Do mockData import
+    // Buscar dados (componentes do formulário)
+    const cor = cores.find((c) => c.id === form.cor_id)!;
+    const base = bases.find((b) => b.id === form.base_id)!;
+    const tamanho = tamanhos.find((t) => t.id === form.tamanho_id)!;
+    const tabelaPreco = tabelasPreco.find((tp) => tp.id === form.tabela_preco_id)!;
     const tributacao = form.tributacao_id
       ? tributacoes.find((t) => t.id === form.tributacao_id)!
       : undefined;
 
-    const pigmentosComNome = buscarFormula(cor, base, tamanho);
+    try {
+      // 1. Verificar cache (para fórmula e preço)
+      const cache = buscarNoCache(form.cor_id, form.base_id, form.tamanho_id);
+      let pigmentosComNome: PigmentoComNome[];
+      let precoVenda: number;
 
-    if (pigmentosComNome.length === 0) {
-      toast.error("Fórmula não encontrada", {
-        description: "Não existe fórmula para esta combinação de cor, base e tamanho no arquivo CSV.",
+      if (cache) {
+        pigmentosComNome = cache.pigmentos;
+        precoVenda = cache.precoVenda;
+        toast.info("Fórmula e preço carregados do cache.");
+      } else {
+        // 2. Buscar fórmula do CSV (se não estiver em cache)
+        pigmentosComNome = buscarFormula(cor, base, tamanho);
+
+        if (pigmentosComNome.length === 0) {
+          toast.error("Fórmula não encontrada", {
+            description: "Não existe fórmula para esta combinação de cor, base e tamanho no arquivo CSV.",
+          });
+          setIsConsultando(false);
+          return;
+        }
+
+        // 3. Calcular preço (se não estiver em cache)
+        precoVenda = calcularPreco(tamanho, tabelaPreco);
+      }
+
+      // 4. [NOVO] Montar o payload para a API
+      const payloadApi = {
+        baseLike: base.nome,
+        baseVols: [tamanho.codigo, tamanho.nome],
+        tolerancia: 0.001,
+        pigmentos: pigmentosComNome.map(p => ({
+          codigo: pigmentos.find(pig => pig.id === p.pigmento_id)?.codigo, // Encontra o código do pigmento
+          quantidade: p.quantidade_ml,
+          volume: tamanho.codigo // Usa o código do tamanho (ex: "T3200")
+        }))
+      };
+
+      // 5. [NOVO] Chamar sua API para verificar o status
+      const response = await fetch("/api/verificar-produto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payloadApi),
       });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.erro || "Falha ao verificar produto no banco de dados.");
+      }
+
+      const dadosDB: { cadastrada: boolean; codigoProduto?: string, nomeProduto?: string } = await response.json();
+
+      // 6. Montar o resultado final com dados reais do DB
+      const novoResultado: ResultadoConsulta = {
+        cor,
+        base,
+        tamanho,
+        tabelaPreco,
+        tributacao,
+        pigmentos: pigmentosComNome,
+        precoVenda,
+        cadastrada: dadosDB.cadastrada, // <-- DADO REAL
+        codigoProduto: dadosDB.codigoProduto, // <-- DADO REAL
+        nomeProduto: dadosDB.nomeProduto, // <-- DADO REAL
+        quantidade: form.quantidade || 1,
+      };
+
+      setResultado(novoResultado);
+      salvarNoCache(novoResultado); // Salva o resultado completo no cache
+      toast.success("Consulta realizada com sucesso!");
+
+      // 7. Adicionar ao histórico
+      const consultaHistorico: ConsultaHistorico = {
+        id: `${Date.now()}-${Math.random()}`,
+        cor: cor.nome,
+        corRgb: cor.rgb,
+        base: base.nome,
+        tamanho: tamanho.nome,
+        tabelaPreco: tabelaPreco.nome,
+        tributacao: tributacao?.nome,
+        precoVenda,
+        cadastrada: dadosDB.cadastrada, // <-- DADO REAL
+        codigoProduto: dadosDB.codigoProduto, // <-- DADO REAL
+        timestamp: Date.now(),
+        dataFormatada: new Date().toLocaleString("pt-BR"),
+        cor_id: form.cor_id,
+        base_id: form.base_id,
+        tamanho_id: form.tamanho_id,
+        tabela_preco_id: form.tabela_preco_id,
+        tributacao_id: form.tributacao_id,
+        quantidade: form.quantidade || 1,
+      };
+      adicionarConsulta(consultaHistorico);
+
+    } catch (error) {
+      console.error("Erro na consulta:", error);
+      toast.error("Erro ao realizar consulta", { description: (error as Error).message });
+    } finally {
       setIsConsultando(false);
-      return;
     }
-
-    // Calcular preço
-    const precoVenda = calcularPreco(tamanho, tabelaPreco);
-
-    const novoResultado: ResultadoConsulta = {
-      cor,
-      base,
-      tamanho,
-      tabelaPreco,
-      tributacao,
-      pigmentos: pigmentosComNome,
-      precoVenda,
-      cadastrada: false,
-      quantidade: form.quantidade || 1,
-    };
-
-    setResultado(novoResultado);
-    salvarNoCache(novoResultado);
-    setIsConsultando(false);
-    toast.success("Consulta realizada com sucesso!");
-
-    // Adicionar ao histórico
-    const consultaHistorico: ConsultaHistorico = {
-      id: `${Date.now()}-${Math.random()}`,
-      cor: cor.nome,
-      corRgb: cor.rgb,
-      base: base.nome,
-      tamanho: tamanho.nome,
-      tabelaPreco: tabelaPreco.nome,
-      tributacao: tributacao?.nome,
-      precoVenda,
-      cadastrada: false,
-      timestamp: Date.now(),
-      dataFormatada: new Date().toLocaleString("pt-BR"),
-      cor_id: form.cor_id,
-      base_id: form.base_id,
-      tamanho_id: form.tamanho_id,
-      tabela_preco_id: form.tabela_preco_id,
-      tributacao_id: form.tributacao_id,
-      quantidade: form.quantidade || 1,
-    };
-    adicionarConsulta(consultaHistorico);
   };
 
   const cadastrarTinta = async () => {
@@ -162,55 +199,68 @@ const Index = () => {
 
     setIsCadastrando(true);
 
-    // Simular chamada ao sistema externo
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // [NOVO] Chamar a API de cadastro
+      const responseApi = await fetch("/api/cadastrar-produto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(resultado), // Envia o resultado atual para o backend
+      });
 
-    // Gerar resposta mockada
-    const codigoGerado = `TIN-${Math.floor(100000 + Math.random() * 900000)}`;
-    const nomeProduto = `${resultado.cor.nome} - ${resultado.base.nome} - ${resultado.tamanho.nome}`;
+      if (!responseApi.ok) {
+        const err = await responseApi.json();
+        throw new Error(err.erro || "Falha ao cadastrar a tinta no sistema externo.");
+      }
 
-    const response: CadastroResponse = {
-      sucesso: true,
-      codigo: codigoGerado,
-      nomeProduto,
-    };
+      const response: CadastroResponse = await responseApi.json();
 
-    // Atualizar resultado
-    const resultadoAtualizado: ResultadoConsulta = {
-      ...resultado,
-      cadastrada: true,
-      codigoProduto: response.codigo,
-      nomeProduto: response.nomeProduto,
-      quantidade: resultado.quantidade || 1
-    };
+      if (!response.sucesso) {
+        throw new Error("API de cadastro retornou um erro.");
+      }
 
-    setResultado(resultadoAtualizado);
-    salvarNoCache(resultadoAtualizado);
-    setDadosCadastro(response);
-    setModalAberto(true);
-    setIsCadastrando(false);
+      // Atualizar resultado (lógica mantida)
+      const resultadoAtualizado: ResultadoConsulta = {
+        ...resultado,
+        cadastrada: true,
+        codigoProduto: response.codigo,
+        nomeProduto: response.nomeProduto,
+        quantidade: resultado.quantidade || 1
+      };
 
-    // Atualizar histórico com status de cadastrada
-    const consultaHistorico: ConsultaHistorico = {
-      id: `${Date.now()}-${Math.random()}`,
-      cor: resultado.cor.nome,
-      base: resultado.base.nome,
-      tamanho: resultado.tamanho.nome,
-      tabelaPreco: resultado.tabelaPreco.nome,
-      tributacao: resultado.tributacao?.nome,
-      precoVenda: resultado.precoVenda,
-      cadastrada: true,
-      codigoProduto: response.codigo,
-      timestamp: Date.now(),
-      dataFormatada: new Date().toLocaleString("pt-BR"),
-      cor_id: resultado.cor.id,
-      base_id: resultado.base.id,
-      tamanho_id: resultado.tamanho.id,
-      tabela_preco_id: resultado.tabelaPreco.id,
-      tributacao_id: resultado.tributacao?.id,
-      quantidade: resultado.quantidade || 1,
-    };
-    adicionarConsulta(consultaHistorico);
+      setResultado(resultadoAtualizado);
+      salvarNoCache(resultadoAtualizado); // Atualiza o cache com o item cadastrado
+      setDadosCadastro(response);
+      setModalAberto(true);
+
+      // Atualizar histórico com status de cadastrada
+      const consultaHistorico: ConsultaHistorico = {
+        id: `${Date.now()}-${Math.random()}`,
+        cor: resultado.cor.nome,
+        corRgb: resultado.cor.rgb,
+        base: resultado.base.nome,
+        tamanho: resultado.tamanho.nome,
+        tabelaPreco: resultado.tabelaPreco.nome,
+        tributacao: resultado.tributacao?.nome,
+        precoVenda: resultado.precoVenda,
+        cadastrada: true,
+        codigoProduto: response.codigo,
+        timestamp: Date.now(),
+        dataFormatada: new Date().toLocaleString("pt-BR"),
+        cor_id: resultado.cor.id,
+        base_id: resultado.base.id,
+        tamanho_id: resultado.tamanho.id,
+        tabela_preco_id: resultado.tabelaPreco.id,
+        tributacao_id: resultado.tributacao?.id,
+        quantidade: resultado.quantidade || 1,
+      };
+      adicionarConsulta(consultaHistorico);
+
+    } catch (error) {
+      console.error("Erro ao cadastrar:", error);
+      toast.error("Erro ao cadastrar tinta", { description: (error as Error).message });
+    } finally {
+      setIsCadastrando(false); // Garante que o botão seja liberado
+    }
   };
 
   const handleConsultarNovamente = async (consulta: ConsultaHistorico) => {

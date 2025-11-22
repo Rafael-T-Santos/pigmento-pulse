@@ -12,7 +12,8 @@ export interface Pigmento {
 export interface Base {
   id: number;
   nome: string;
-  codigo: string;
+  codigo: string[];
+  volume: string;
 }
 
 export interface Tamanho {
