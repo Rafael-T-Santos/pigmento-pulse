@@ -156,25 +156,36 @@ export const getBasesDisponiveis = (
     );
   }
 
-  // 3. [NOVO] Identifica quais combinações de PRODUTO + BASE + VOLUME a fórmula pede
-  // Exemplo: Set { "Decoratto-P-LT", "Seda-M-GL" }
+  // 3. Identifica combinações
   const combinacoesValidas = new Set(
     linhasRelevantes.map((row) => {
-      // Encontra o código de volume correspondente à embalagem do CSV (ex: "GALÃO" -> "GL")
-      const tamanhoMock = mockTamanhos.find(t => t.nome === row.EMBALAGEM);
-      const volumeCodigo = tamanhoMock ? tamanhoMock.codigo : ""; 
+      const tamanhoMock = mockTamanhos.find(t => t.nome.toUpperCase() === row.EMBALAGEM.toUpperCase());
       
-      // Cria uma chave única: NOME + TIPO_BASE (P/M) + VOLUME (LT/GL)
+      // DIAGNÓSTICO: Verifique se encontrou o tamanho
+      if (!tamanhoMock && tamanho) {
+         console.warn(`AVISO: Tamanho não encontrado no mock para a embalagem CSV: "${row.EMBALAGEM}". Esperado: "${tamanho.nome}"`);
+      }
+
+      const volumeCodigo = tamanhoMock ? tamanhoMock.codigo : ""; 
       return `${row.PRODUTO}|${row.BASE}|${volumeCodigo}`;
     })
   );
 
-  // 4. Filtra o mockBases verificando se ele atende aos requisitos da fórmula
-  return mockBases.filter((base) => {
-  // Verifica se a combinação da base (Nome + Código "P" + Volume) bate com o que a fórmula pede
-  // Como base.codigo agora é string, usamos diretamente na chave
-  return combinacoesValidas.has(`${base.nome}|${base.codigo}|${base.volume}`);
-});
+  // 4. Filtra o mockBases
+  const resultado = mockBases.filter((base) => {
+    return combinacoesValidas.has(`${base.nome}|${base.codigo}|${base.volume}`);
+  });
+
+  // DIAGNÓSTICO FINAL
+  if (tamanho && resultado.length === 0) {
+      console.log("Nenhuma base encontrada para:", {
+          cor: cor.nome,
+          tamanho: tamanho.nome,
+          combinacoesGeradasPeloCSV: Array.from(combinacoesValidas)
+      });
+  }
+
+  return resultado;
 };
 
 export const getTamanhosDisponiveis = (

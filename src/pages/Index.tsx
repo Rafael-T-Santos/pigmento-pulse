@@ -17,19 +17,14 @@ import {
   tamanhos,
   tabelasPreco,
   tributacoes,
-  pigmentos,
-  calcularPreco,
 } from "@/data/mockData";
 import {
   carregarDadosFormulas,
   buscarFormula,
   getCores,
 } from "@/data/formulaService";
-import {
-  buscarNoCache,
-  salvarNoCache,
-  limparCacheExpirado,
-} from "@/utils/cache";
+// Cache removido completamente conforme solicitado
+import { calcularPrecoTotalViaApi } from "@/services/pricingService";
 import { useHistoricoConsultas } from "@/hooks/useHistoricoConsultas";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -39,33 +34,28 @@ const Index = () => {
   const [isConsultando, setIsConsultando] = useState(false);
   const [isCadastrando, setIsCadastrando] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
-  const [dadosCadastro, setDadosCadastro] = useState<CadastroResponse | null>(
-    null
-  );
+  const [dadosCadastro, setDadosCadastro] = useState<CadastroResponse | null>(null);
   const [historicoPanelAberto, setHistoricoPanelAberto] = useState(false);
   const resultadoRef = useRef<HTMLDivElement>(null);
   
   const { historico, adicionarConsulta, limparHistorico } = useHistoricoConsultas();
 
-  // Estados para dados dinâmicos
+  // Estados para dados
   const [isFormulasLoading, setIsFormulasLoading] = useState(true);
-  const [cores, setCores] = useState<Cor[]>([]); // Apenas 'cores' é dinâmico
+  const [cores, setCores] = useState<Cor[]>([]);
 
-  // Limpar cache expirado ao carregar
   useEffect(() => {
-    limparCacheExpirado();
-    
     const carregarDados = async () => {
       try {
-        await carregarDadosFormulas(); // Carrega CSV e processa cores
-        setCores(getCores()); // Busca as cores processadas
+        await carregarDadosFormulas();
+        setCores(getCores());
       } catch (error) {
         console.error(error);
         toast.error("Falha ao carregar arquivo de fórmulas.", {
           description: "Verifique o console e se o arquivo formulas.csv está na pasta /public",
         });
       } finally {
-        setIsFormulasLoading(false); // Libera o formulário
+        setIsFormulasLoading(false);
       }
     };
     carregarDados();
@@ -75,7 +65,6 @@ const Index = () => {
     setIsConsultando(true);
     setResultado(null);
 
-    // Validar quantidade
     const quantidade = form.quantidade || 1;
     if (quantidade < 1 || quantidade > 999) {
       toast.error("Quantidade deve ser entre 1 e 999");
@@ -83,7 +72,7 @@ const Index = () => {
       return;
     }
 
-    // Buscar dados (componentes do formulário)
+    // Identificar objetos selecionados
     const cor = cores.find((c) => c.id === form.cor_id)!;
     const base = bases.find((b) => b.id === form.base_id)!;
     const tamanho = tamanhos.find((t) => t.id === form.tamanho_id)!;
@@ -93,57 +82,71 @@ const Index = () => {
       : undefined;
 
     try {
-      // 1. Verificar cache (para fórmula e preço)
-      const cache = buscarNoCache(form.cor_id, form.base_id, form.tamanho_id);
-      let pigmentosComNome: PigmentoComNome[];
-      let precoVenda: number;
+      // 1. Obter a fórmula (Sempre busca fresca do arquivo carregado)
+      const pigmentosComNome = buscarFormula(cor, base, tamanho);
 
-      if (cache) {
-        pigmentosComNome = cache.pigmentos;
-        precoVenda = cache.precoVenda;
-        toast.info("Fórmula e preço carregados do cache.");
-      } else {
-        // 2. Buscar fórmula do CSV (se não estiver em cache)
-        pigmentosComNome = buscarFormula(cor, base, tamanho);
-
-        if (pigmentosComNome.length === 0) {
-          toast.error("Fórmula não encontrada", {
-            description: "Não existe fórmula para esta combinação de cor, base e tamanho no arquivo CSV.",
-          });
-          setIsConsultando(false);
-          return;
-        }
-
-        // 3. Calcular preço (se não estiver em cache)
-        precoVenda = calcularPreco(tamanho, tabelaPreco);
+      if (pigmentosComNome.length === 0) {
+        toast.error("Fórmula não encontrada", {
+          description: "Não existe fórmula para esta combinação de cor, base e tamanho.",
+        });
+        setIsConsultando(false);
+        return;
       }
 
-      // 4. [NOVO] Montar o payload para a API
-      const payloadApi = {
+      // 2. Calcular Preço via API (Executa N vezes: Base + Pigmentos)
+      // Se Tabela for Varejo (1) -> Tributação é selecionável. Se for Contribuinte (1) -> S, senão N.
+      // Se Tabela for Atacado (0) -> Tributação é irrelevante aqui? Assumindo 'N' ou lógica padrão.
+      // Ajuste a lógica do cobraST conforme sua regra exata.
+      const cobraST = (tributacao?.id === 1) ? "S" : "N"; 
+      const tabelaId = (tabelaPreco?.id === 1) ? 0 : 1;
+
+      let precoVenda = 0;
+      try {
+        precoVenda = await calcularPrecoTotalViaApi({
+          base,
+          pigmentos: pigmentosComNome,
+          codTabela: tabelaId,
+          cobraST
+        });
+      } catch (error) {
+        toast.error("Erro ao calcular preço", { 
+          description: "Não foi possível conectar à API de preços." 
+        });
+        setIsConsultando(false);
+        return;
+      }
+
+      // 3. Verificar se produto já está cadastrado via API
+      const payloadVerificacao = {
         pigmentos: pigmentosComNome.map((p) => ({
-          codigo: p.pigmento_id, // Envia o ID numérico (ex: 11597)
+          codigo: p.pigmento_id,
           quantidade: p.quantidade_ml,
         })),
         base: {
-          codigo: base.id // Envia o ID numérico da base (ex: 11590)
+          codigo: base.id
         }
       };
 
-      // 5. [NOVO] Chamar sua API para verificar o status
-      const response = await fetch("/api/verificar-produto", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payloadApi),
-      });
+      let dadosDB = { cadastrada: false, codigoProduto: undefined, nomeProduto: undefined };
+      
+      try {
+        const response = await fetch("/api/verificar-produto", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadVerificacao),
+        });
 
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.erro || "Falha ao verificar produto no banco de dados.");
+        if (response.ok) {
+          dadosDB = await response.json();
+        } else {
+          console.warn("API de verificação retornou erro, assumindo não cadastrado.");
+        }
+      } catch (error) {
+        console.error("Erro ao verificar produto:", error);
+        // Não interrompe o fluxo, apenas assume que não está cadastrado
       }
 
-      const dadosDB: { cadastrada: boolean; codigoProduto?: string, nomeProduto?: string } = await response.json();
-
-      // 6. Montar o resultado final com dados reais do DB
+      // 4. Montar Resultado Final
       const novoResultado: ResultadoConsulta = {
         cor,
         base,
@@ -151,18 +154,17 @@ const Index = () => {
         tabelaPreco,
         tributacao,
         pigmentos: pigmentosComNome,
-        precoVenda,
-        cadastrada: dadosDB.cadastrada, // <-- DADO REAL
-        codigoProduto: dadosDB.codigoProduto, // <-- DADO REAL
-        nomeProduto: dadosDB.nomeProduto, // <-- DADO REAL
-        quantidade: form.quantidade || 1,
+        precoVenda, // Preço vindo da soma das consultas da API
+        cadastrada: dadosDB.cadastrada, // Status vindo da API
+        codigoProduto: dadosDB.codigoProduto,
+        nomeProduto: dadosDB.nomeProduto,
+        quantidade: quantidade,
       };
 
       setResultado(novoResultado);
-      salvarNoCache(novoResultado); // Salva o resultado completo no cache
       toast.success("Consulta realizada com sucesso!");
 
-      // 7. Adicionar ao histórico
+      // Adicionar ao histórico visual (apenas log de sessão, sem impacto na lógica de negócio)
       const consultaHistorico: ConsultaHistorico = {
         id: `${Date.now()}-${Math.random()}`,
         cor: cor.nome,
@@ -172,8 +174,8 @@ const Index = () => {
         tabelaPreco: tabelaPreco.nome,
         tributacao: tributacao?.nome,
         precoVenda,
-        cadastrada: dadosDB.cadastrada, // <-- DADO REAL
-        codigoProduto: dadosDB.codigoProduto, // <-- DADO REAL
+        cadastrada: dadosDB.cadastrada,
+        codigoProduto: dadosDB.codigoProduto,
         timestamp: Date.now(),
         dataFormatada: new Date().toLocaleString("pt-BR"),
         cor_id: form.cor_id,
@@ -181,25 +183,23 @@ const Index = () => {
         tamanho_id: form.tamanho_id,
         tabela_preco_id: form.tabela_preco_id,
         tributacao_id: form.tributacao_id,
-        quantidade: form.quantidade || 1,
+        quantidade: quantidade,
       };
       adicionarConsulta(consultaHistorico);
 
     } catch (error) {
       console.error("Erro na consulta:", error);
-      toast.error("Erro ao realizar consulta", { description: (error as Error).message });
+      toast.error("Erro inesperado", { description: (error as Error).message });
     } finally {
       setIsConsultando(false);
     }
   };
 
-const cadastrarTinta = async () => {
+  const cadastrarTinta = async () => {
     if (!resultado) return;
-
     setIsCadastrando(true);
 
     try {
-      // Crie o payload limpo baseado na estrutura do ERP
       const payloadCadastro = {
         pigmentos: resultado.pigmentos.map((p) => ({
             codigo: p.pigmento_id,
@@ -208,7 +208,6 @@ const cadastrarTinta = async () => {
         base: {
             codigo: resultado.base.id
         },
-        // Adicione outros campos se o cadastro exigir (ex: nome da cor gerada)
         nomeCor: resultado.cor.nome, 
         tamanho: resultado.tamanho.id 
       };
@@ -216,62 +215,37 @@ const cadastrarTinta = async () => {
       const responseApi = await fetch("/api/cadastrar-produto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payloadCadastro), // <--- Use o payload específico
+        body: JSON.stringify(payloadCadastro),
       });
 
       if (!responseApi.ok) {
         const err = await responseApi.json();
-        throw new Error(err.erro || "Falha ao cadastrar a tinta no sistema externo.");
+        throw new Error(err.erro || "Falha ao cadastrar.");
       }
 
       const response: CadastroResponse = await responseApi.json();
 
       if (!response.sucesso) {
-        throw new Error("API de cadastro retornou um erro.");
+        throw new Error("Erro no retorno do cadastro.");
       }
 
-      // Atualizar resultado (lógica mantida)
+      // Atualizar a interface com o sucesso
       const resultadoAtualizado: ResultadoConsulta = {
         ...resultado,
         cadastrada: true,
         codigoProduto: response.codigo,
         nomeProduto: response.nomeProduto,
-        quantidade: resultado.quantidade || 1
       };
 
       setResultado(resultadoAtualizado);
-      salvarNoCache(resultadoAtualizado); // Atualiza o cache com o item cadastrado
       setDadosCadastro(response);
       setModalAberto(true);
-
-      // Atualizar histórico com status de cadastrada
-      const consultaHistorico: ConsultaHistorico = {
-        id: `${Date.now()}-${Math.random()}`,
-        cor: resultado.cor.nome,
-        corRgb: resultado.cor.rgb,
-        base: resultado.base.nome,
-        tamanho: resultado.tamanho.nome,
-        tabelaPreco: resultado.tabelaPreco.nome,
-        tributacao: resultado.tributacao?.nome,
-        precoVenda: resultado.precoVenda,
-        cadastrada: true,
-        codigoProduto: response.codigo,
-        timestamp: Date.now(),
-        dataFormatada: new Date().toLocaleString("pt-BR"),
-        cor_id: resultado.cor.id,
-        base_id: resultado.base.id,
-        tamanho_id: resultado.tamanho.id,
-        tabela_preco_id: resultado.tabelaPreco.id,
-        tributacao_id: resultado.tributacao?.id,
-        quantidade: resultado.quantidade || 1,
-      };
-      adicionarConsulta(consultaHistorico);
 
     } catch (error) {
       console.error("Erro ao cadastrar:", error);
       toast.error("Erro ao cadastrar tinta", { description: (error as Error).message });
     } finally {
-      setIsCadastrando(false); // Garante que o botão seja liberado
+      setIsCadastrando(false);
     }
   };
 
@@ -285,9 +259,9 @@ const cadastrarTinta = async () => {
       quantidade: consulta.quantidade || 1,
     };
     
+    // Dispara uma nova consulta completa (sem cache)
     await realizarConsulta(formData);
     
-    // Scroll suave até o resultado
     setTimeout(() => {
       resultadoRef.current?.scrollIntoView({ 
         behavior: "smooth", 
@@ -298,7 +272,6 @@ const cadastrarTinta = async () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-gradient-header shadow-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
@@ -324,21 +297,18 @@ const cadastrarTinta = async () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-5xl mx-auto space-y-8">
-          {/* Formulário */}
           <div className="bg-card rounded-lg shadow-card p-6 md:p-8">
             <h2 className="text-xl font-semibold mb-6">Realizar Consulta</h2>
             <ConsultaForm
               onSubmit={realizarConsulta}
               isLoading={isConsultando}
-              isDataLoading={isFormulasLoading} // Passa o status de loading
-              cores={cores} // Passa as cores carregadas
+              isDataLoading={isFormulasLoading}
+              cores={cores}
             />
           </div>
 
-          {/* Resultado */}
           {resultado && (
             <div ref={resultadoRef}>
               <ResultadoCard
@@ -351,14 +321,12 @@ const cadastrarTinta = async () => {
         </div>
       </main>
 
-      {/* Modal */}
       <ModalCadastro
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
         dados={dadosCadastro}
       />
 
-      {/* Painel de Histórico */}
       <HistoricoPanel
         isOpen={historicoPanelAberto}
         onClose={() => setHistoricoPanelAberto(false)}

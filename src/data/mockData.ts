@@ -55,8 +55,8 @@ export const tamanhos: Tamanho[] = [
 ];
 
 export const tabelasPreco: TabelaPreco[] = [
-  { id: 0, nome: "Atacado" },
-  { id: 1, nome: "Varejo" },
+  { id: 1, nome: "Atacado" },
+  { id: 2, nome: "Varejo" },
 ];
 
 export const tributacoes: Tributacao[] = [

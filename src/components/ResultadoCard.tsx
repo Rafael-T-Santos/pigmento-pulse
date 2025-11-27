@@ -36,7 +36,7 @@ export const ResultadoCard = ({
   );
   
   const totalPigmentosGeral = totalPigmentosPorLata * quantidade;
-  const valorTotal = resultado.precoVenda * quantidade;
+  const valorTotal = resultado.precoVenda * quantidade; // Se preço já vier multiplicado da API, cuidado aqui. Mas como vem unitário do pricingService, ok.
 
   return (
     <Card className="shadow-elevated animate-in fade-in-50 duration-500 overflow-hidden">
@@ -131,17 +131,17 @@ export const ResultadoCard = ({
                       <TableCell className="font-medium">{pigmento.nome}</TableCell>
                       {isMultiple && (
                         <TableCell className="text-right text-muted-foreground">
-                          {pigmento.quantidade_ml.toFixed(1)} ml
+                          {pigmento.quantidade_ml.toFixed(3)} ml
                         </TableCell>
                       )}
                       <TableCell className={`text-right ${isMultiple ? 'font-semibold text-primary' : ''}`}>
                         {isMultiple 
-                          ? `${(pigmento.quantidade_ml * quantidade).toFixed(1)} ml`
-                          : `${pigmento.quantidade_ml} ml`
+                          ? `${(pigmento.quantidade_ml * quantidade).toFixed(3)} ml`
+                          : `${pigmento.quantidade_ml.toFixed(3)} ml` /* Ajustei para 3 casas se precisar de precisão, ou 1 se preferir */
                         }
                       </TableCell>
                       <TableCell className="text-right">
-                        {pigmento.percentual.toFixed(1)}%
+                        {pigmento.percentual.toFixed(2)}%
                       </TableCell>
                     </TableRow>
                   ))}
@@ -151,13 +151,13 @@ export const ResultadoCard = ({
                   <TableCell className="font-semibold">Total</TableCell>
                   {isMultiple && (
                     <TableCell className="text-right font-semibold text-muted-foreground">
-                      {totalPigmentosPorLata.toFixed(1)} ml
+                      {totalPigmentosPorLata.toFixed(3)} ml
                     </TableCell>
                   )}
                   <TableCell className="text-right font-semibold">
                     {isMultiple 
-                      ? `${totalPigmentosGeral.toFixed(1)} ml`
-                      : `${totalPigmentosPorLata} ml`
+                      ? `${totalPigmentosGeral.toFixed(3)} ml`
+                      : `${totalPigmentosPorLata.toFixed(3)} ml`
                     }
                   </TableCell>
                   <TableCell className="text-right font-semibold">100%</TableCell>
