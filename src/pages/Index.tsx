@@ -120,14 +120,13 @@ const Index = () => {
 
       // 4. [NOVO] Montar o payload para a API
       const payloadApi = {
-        baseLike: base.nome,
-        baseVols: [tamanho.codigo, tamanho.nome],
-        tolerancia: 0.001,
-        pigmentos: pigmentosComNome.map(p => ({
-          codigo: pigmentos.find(pig => pig.id === p.pigmento_id)?.codigo, // Encontra o código do pigmento
+        pigmentos: pigmentosComNome.map((p) => ({
+          codigo: p.pigmento_id, // Envia o ID numérico (ex: 11597)
           quantidade: p.quantidade_ml,
-          volume: tamanho.codigo // Usa o código do tamanho (ex: "T3200")
-        }))
+        })),
+        base: {
+          codigo: base.id // Envia o ID numérico da base (ex: 11590)
+        }
       };
 
       // 5. [NOVO] Chamar sua API para verificar o status
@@ -194,17 +193,30 @@ const Index = () => {
     }
   };
 
-  const cadastrarTinta = async () => {
+const cadastrarTinta = async () => {
     if (!resultado) return;
 
     setIsCadastrando(true);
 
     try {
-      // [NOVO] Chamar a API de cadastro
+      // Crie o payload limpo baseado na estrutura do ERP
+      const payloadCadastro = {
+        pigmentos: resultado.pigmentos.map((p) => ({
+            codigo: p.pigmento_id,
+            quantidade: p.quantidade_ml,
+        })),
+        base: {
+            codigo: resultado.base.id
+        },
+        // Adicione outros campos se o cadastro exigir (ex: nome da cor gerada)
+        nomeCor: resultado.cor.nome, 
+        tamanho: resultado.tamanho.id 
+      };
+
       const responseApi = await fetch("/api/cadastrar-produto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(resultado), // Envia o resultado atual para o backend
+        body: JSON.stringify(payloadCadastro), // <--- Use o payload específico
       });
 
       if (!responseApi.ok) {

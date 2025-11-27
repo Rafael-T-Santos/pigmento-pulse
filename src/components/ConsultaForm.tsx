@@ -76,8 +76,20 @@ export const ConsultaForm = ({ onSubmit, isLoading, isDataLoading, cores }: Cons
       if (field === 'tamanho_id') {
         const tamanhoSel = tamanhos.find(t => t.id === intValue) || null;
         const basesVálidas = getBasesDisponiveis(corSel, tamanhoSel);
-        if (prev.base_id && !basesVálidas.find(b => b.id === prev.base_id)) {
-          newValues.base_id = undefined;
+        
+        // Lógica melhorada: Tenta manter a base pelo NOME se o ID mudar
+        if (prev.base_id) {
+            const baseAnterior = bases.find(b => b.id === prev.base_id);
+            // Procura na nova lista uma base com o mesmo nome
+            const baseCorrespondente = basesVálidas.find(b => b.nome === baseAnterior?.nome);
+            
+            if (baseCorrespondente) {
+                // Se achou a mesma base no novo tamanho, atualiza o ID silenciosamente
+                newValues.base_id = baseCorrespondente.id;
+            } else if (!basesVálidas.find(b => b.id === prev.base_id)) {
+                // Se não achou nem o ID nem o nome, limpa
+                newValues.base_id = undefined;
+            }
         }
       }
 
@@ -124,6 +136,16 @@ export const ConsultaForm = ({ onSubmit, isLoading, isDataLoading, cores }: Cons
     () => getBasesDisponiveis(corSelecionada, tamanhoSelecionado),
     [corSelecionada, tamanhoSelecionado]
   );
+
+  // [NOVO] Filtra bases duplicadas pelo nome para exibição no dropdown
+  const basesUnicas = useMemo(() => {
+    const seen = new Set();
+    return basesDisponiveis.filter((base) => {
+      if (seen.has(base.nome)) return false;
+      seen.add(base.nome);
+      return true;
+    });
+  }, [basesDisponiveis]);
   
   const tamanhosDisponiveis = useMemo(
     () => getTamanhosDisponiveis(corSelecionada, baseSelecionada),
@@ -165,8 +187,8 @@ export const ConsultaForm = ({ onSubmit, isLoading, isDataLoading, cores }: Cons
               <SelectValue placeholder="Selecione a base..." />
             </SelectTrigger>
             <SelectContent>
-              {/* Mapeia a lista filtrada */}
-              {basesDisponiveis.map((base) => (
+              {/* Mapeia a lista filtrada e ÚNICA */}
+              {basesUnicas.map((base) => (
                 <SelectItem key={base.id} value={base.id.toString()}>
                   {base.nome}
                 </SelectItem>

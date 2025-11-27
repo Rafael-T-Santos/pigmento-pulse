@@ -84,26 +84,27 @@ export const buscarFormula = (
   base: Base,
   tamanho: Tamanho
 ): PigmentoComNome[] => {
-  if (!isDataLoaded) {
-    throw new Error("Os dados da fórmula ainda não foram carregados.");
-  }
+  if (!isDataLoaded) throw new Error("Dados não carregados.");
 
-  // Encontra as linhas no CSV que correspondem à seleção
+  // 1. Filtra pela cor
   const formulaRows = loadedFormulas.filter(
-    (row) =>
-      row.COD_COR === cor.codigo
+    (row) => row.COD_COR === cor.codigo
   );
 
-  // Filtra pelo produto (Base) e embalagem (Tamanho)
-  const matchingRows = formulaRows.filter(
+  // 2. Filtra combinando:
+  // - Nome do Produto
+  // - Nome da Embalagem (Tamanho)
+  // - [NOVO] Código da Base (O código da base do Mock deve conter o código da base do CSV)
+const matchingRows = formulaRows.filter(
     (row) =>
       row.PRODUTO === base.nome &&
-      row.EMBALAGEM === tamanho.nome
+      row.EMBALAGEM === tamanho.nome &&
+      base.codigo === row.BASE // <--- CORREÇÃO: Comparação estrita de string
   );
-  
+
   if (!matchingRows.length) {
-    console.warn(`Nenhuma fórmula encontrada para: ${cor.nome}, ${base.nome}, ${tamanho.nome}`);
-    return []; // Retorna array vazio
+    console.warn(`Fórmula não encontrada.`);
+    return [];
   }
 
   // Mapeia as linhas encontradas para o formato PigmentoComNome
@@ -141,31 +142,39 @@ export const getBasesDisponiveis = (
   cor: Cor | null,
   tamanho: Tamanho | null
 ): Base[] => {
-  // Se nenhuma cor for selecionada, retorna a lista estática completa
-  if (!cor) {
-    return mockBases;
-  }
+  if (!cor) return mockBases;
 
-  // Filtra as linhas do CSV pela cor
+  // 1. Filtra linhas do CSV pela cor
   let linhasRelevantes = loadedFormulas.filter(
     (row) => row.COD_COR === cor.codigo || row.COD_COR === cor.codigoDisplay
   );
 
-  // Se um tamanho também foi selecionado, filtra por ele
+  // 2. Se tiver tamanho selecionado, filtra também pela embalagem
   if (tamanho) {
     linhasRelevantes = linhasRelevantes.filter(
       (row) => row.EMBALAGEM === tamanho.nome
     );
   }
 
-  // Pega os nomes únicos de PRODUTO (Base) das linhas filtradas
-  const nomesDeBasesDisponiveis = new Set(
-    linhasRelevantes.map((row) => row.PRODUTO)
+  // 3. [NOVO] Identifica quais combinações de PRODUTO + BASE + VOLUME a fórmula pede
+  // Exemplo: Set { "Decoratto-P-LT", "Seda-M-GL" }
+  const combinacoesValidas = new Set(
+    linhasRelevantes.map((row) => {
+      // Encontra o código de volume correspondente à embalagem do CSV (ex: "GALÃO" -> "GL")
+      const tamanhoMock = mockTamanhos.find(t => t.nome === row.EMBALAGEM);
+      const volumeCodigo = tamanhoMock ? tamanhoMock.codigo : ""; 
+      
+      // Cria uma chave única: NOME + TIPO_BASE (P/M) + VOLUME (LT/GL)
+      return `${row.PRODUTO}|${row.BASE}|${volumeCodigo}`;
+    })
   );
 
-  // Filtra a lista estática de bases (mockBases)
-  // para retornar apenas aquelas que existem nas fórmulas
-  return mockBases.filter((base) => nomesDeBasesDisponiveis.has(base.nome));
+  // 4. Filtra o mockBases verificando se ele atende aos requisitos da fórmula
+  return mockBases.filter((base) => {
+  // Verifica se a combinação da base (Nome + Código "P" + Volume) bate com o que a fórmula pede
+  // Como base.codigo agora é string, usamos diretamente na chave
+  return combinacoesValidas.has(`${base.nome}|${base.codigo}|${base.volume}`);
+});
 };
 
 export const getTamanhosDisponiveis = (

@@ -12,7 +12,7 @@ export interface Pigmento {
 export interface Base {
   id: number;
   nome: string;
-  codigo: string[];
+  codigo: string;
   volume: string;
 }
 
@@ -95,4 +95,14 @@ export interface ConsultaHistorico {
   tabela_preco_id: number;
   tributacao_id?: number;
   quantidade: number;
+}
+
+export interface PayloadConsultaERP {
+  pigmentos: {
+    codigo: number;     // ID do pigmento (ex: 11597)
+    quantidade: number; // (ex: 1.48)
+  }[];
+  base: {
+    codigo: number;     // ID da base (ex: 11590)
+  };
 }
