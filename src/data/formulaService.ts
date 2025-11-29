@@ -1,4 +1,5 @@
 import { Cor, Base, Tamanho, Pigmento, PigmentoComNome } from "@/types/tinta";
+import { mapaDeCores } from "@/data/colorMap";
 import Papa from "papaparse";
 import {
   pigmentos as pigmentosMock,
@@ -50,13 +51,14 @@ export const carregarDadosFormulas = async (): Promise<void> => {
 
     loadedFormulas.forEach((row) => {
       if (!coresMap.has(row.COD_COR)) {
+        const corHex = mapaDeCores[row.COD_COR] || "#CCCCCC";
         coresMap.set(row.COD_COR, {
           id: corIdCounter++,
           nome: row.NOME_COR,
           codigo: row.COD_COR,
           codigoDisplay: row.COD_COR, // Usando o próprio código como display
           ativa: true,
-          rgb: undefined, // RGB não existe no CSV
+          rgb: corHex,
         });
       }
     });

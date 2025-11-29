@@ -1,3 +1,4 @@
+// src/services/pricingService.ts
 import { Base, PigmentoComNome } from "@/types/tinta";
 
 interface PrecoResponse {
@@ -14,7 +15,7 @@ interface ConsultarPrecoParams {
   cobraST: "S" | "N";
 }
 
-// Função auxiliar para chamar a API para um único item
+// Função para consultar um único item (Base ou Pigmento)
 const fetchPrecoItem = async (
   codProd: number,
   codTabela: number,
@@ -34,13 +35,13 @@ const fetchPrecoItem = async (
     });
 
     if (!response.ok) {
-      throw new Error(`Erro na API: ${response.statusText}`);
+      throw new Error(`Erro na API de preço: ${response.statusText}`);
     }
 
     const data: PrecoResponse = await response.json();
 
     if (!data.sucesso) {
-      console.warn(`A API retornou sucesso: false para o produto ${codProd}`);
+      console.warn(`API retornou sucesso: false para o produto ${codProd}. Assumindo preço 0.`);
       return 0;
     }
 
@@ -57,26 +58,28 @@ export const calcularPrecoTotalViaApi = async ({
   codTabela,
   cobraST,
 }: ConsultarPrecoParams): Promise<number> => {
-  // 1. Criar array de promessas para os pigmentos
-  // Filtramos pigmentos com quantidade > 0 para evitar chamadas desnecessárias
+  // 1. Consultar preço da Base
+  // Nota: Assumimos que o preço retornado para a base já é unitário para o tamanho escolhido (Galão/Lata)
+  // baseada no ID único da base (ex: 11586 é Lata, 11585 é Galão).
+  const basePromise = fetchPrecoItem(base.id, codTabela, cobraST);
+
+  // 2. Consultar preço de cada Pigmento (somente se quantidade > 0)
   const pigmentosPromises = pigmentos
     .filter((p) => p.quantidade_ml > 0)
     .map(async (pigmento) => {
       const precoUnitario = await fetchPrecoItem(pigmento.pigmento_id, codTabela, cobraST);
-      // Preço do pigmento = Quantidade (ml) * Preço Unitário (por ml, presumivelmente)
+      // O preço da API é por unidade (provavelmente ML ou Litro, ajuste conforme sua regra de negócio).
+      // Se o preço for por ML, a conta é direta:
       return precoUnitario * pigmento.quantidade_ml;
     });
 
-  // 2. Chamar preço da Base
-  const basePromise = fetchPrecoItem(base.id, codTabela, cobraST);
-
-  // 3. Executar todas as consultas em paralelo para ser mais rápido
+  // 3. Executar todas as requisições em paralelo para performance
   const [custoBase, ...custosPigmentos] = await Promise.all([
     basePromise,
     ...pigmentosPromises,
   ]);
 
-  // 4. Somar tudo
+  // 4. Somar Base + Total dos Pigmentos
   const totalPigmentos = custosPigmentos.reduce((acc, curr) => acc + curr, 0);
   const precoFinal = custoBase + totalPigmentos;
 
