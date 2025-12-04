@@ -200,17 +200,30 @@ const Index = () => {
     setIsCadastrando(true);
 
     try {
+      // Cálculo do volume em litros (ex: 3200ml -> 3.2)
+      const volumeLitros = resultado.tamanho.volume_ml / 1000;
+
+      // Montagem do payload conforme a nova especificação
       const payloadCadastro = {
-        pigmentos: resultado.pigmentos.map((p) => ({
-            codigo: p.pigmento_id,
-            quantidade: p.quantidade_ml,
-        })),
-        base: {
-            codigo: resultado.base.id
+        cor: {
+          nome: resultado.cor.nome
         },
-        nomeCor: resultado.cor.nome, 
-        tamanho: resultado.tamanho.id 
+        base: {
+          nome: resultado.base.nome,
+          codigo: resultado.base.id
+        },
+        tamanho: {
+          nome: `${volumeLitros}L`,       // Ex: "3.2L"
+          codVol: resultado.tamanho.codigo, // Ex: "GL" (Vem de mockData/types)
+          litros: volumeLitros            // Ex: 3.2 (Number)
+        },
+        pigmentos: resultado.pigmentos.map((p) => ({
+          codigo: p.pigmento_id,
+          quantidade: p.quantidade_ml,
+        }))
       };
+
+      // console.log("Payload enviado:", JSON.stringify(payloadCadastro, null, 2)); // Descomente para debug
 
       const responseApi = await fetch("/api/cadastrar-produto", {
         method: "POST",

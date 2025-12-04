@@ -18,9 +18,43 @@ interface ModalCadastroProps {
 export const ModalCadastro = ({ isOpen, onClose, dados }: ModalCadastroProps) => {
   if (!dados) return null;
 
-  const copiarTexto = (texto: string, tipo: string) => {
-    navigator.clipboard.writeText(texto);
-    toast.success(`${tipo} copiado com sucesso!`);
+  const copiarTexto = async (texto: string, tipo: string) => {
+    try {
+      // Tenta usar a API moderna de Clipboard
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(texto);
+        toast.success(`${tipo} copiado com sucesso!`);
+      } else {
+        throw new Error("Clipboard API indisponível");
+      }
+    } catch (err) {
+      // Fallback para método antigo se a API falhar ou não existir
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = texto;
+        
+        // Garante que o elemento não afete o layout visualmente
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        
+        textArea.focus();
+        textArea.select();
+        
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+          toast.success(`${tipo} copiado com sucesso!`);
+        } else {
+          toast.error(`Não foi possível copiar o ${tipo.toLowerCase()}`);
+        }
+      } catch (fallbackErr) {
+        console.error("Erro ao copiar:", fallbackErr);
+        toast.error("Erro ao copiar para a área de transferência");
+      }
+    }
   };
 
   return (

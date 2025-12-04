@@ -52,6 +52,7 @@ export const ResultadoCard = ({
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-2 flex-wrap">
+            {/* Status do Cadastro */}
             {resultado.cadastrada ? (
               <Badge variant="default" className="bg-success text-success-foreground">
                 <CheckCircle2 className="mr-1 h-4 w-4" />
@@ -63,11 +64,23 @@ export const ResultadoCard = ({
                 Não Cadastrada
               </Badge>
             )}
+
+            {/* NOVAS TAGS: Base e Tamanho */}
+            <Badge variant="secondary" className="bg-muted text-muted-foreground border border-border">
+              {resultado.base.nome}
+            </Badge>
+            <Badge variant="secondary" className="bg-muted text-muted-foreground border border-border">
+              {resultado.tamanho.nome}
+            </Badge>
+
+            {/* Tributação */}
             {resultado.tributacao && (
               <Badge variant="outline" className="border-primary/30 text-primary">
                 {resultado.tributacao.nome}
               </Badge>
-              )}
+            )}
+
+            {/* Tags Condicionais */}
             {isMultiple && (
               <Badge variant="secondary" className="bg-primary/10 text-primary">
                 <Package className="mr-1 h-4 w-4" />
@@ -80,8 +93,10 @@ export const ResultadoCard = ({
               </Badge>
             )}
           </div>
+          
+          {/* Código na direita (mantido) */}
           {resultado.cadastrada && resultado.codigoProduto && (
-            <div className="text-right">
+            <div className="text-right hidden sm:block">
               <p className="text-sm text-muted-foreground">Código</p>
               <p className="font-mono font-semibold text-lg">{resultado.codigoProduto}</p>
             </div>
@@ -221,24 +236,45 @@ export const ResultadoCard = ({
           </div>
         )}
 
-        {/* Ação de Cadastro */}
+        {/* Ação de Cadastro ou Sucesso */}
         <div className="pt-4">
           {resultado.cadastrada ? (
-            <div className="text-center space-y-2 p-4 bg-success/10 rounded-lg border border-success/20">
-              <p className="font-medium text-success">Tinta já cadastrada no sistema</p>
+            <div className="flex flex-col items-center space-y-4 p-6 bg-success/10 rounded-xl border border-success/20 shadow-sm">
+              
+              {/* Cabeçalho de Sucesso */}
+              <div className="flex items-center gap-2 text-success">
+                <CheckCircle2 className="h-6 w-6" />
+                <span className="font-bold text-lg">Produto Já Cadastrado</span>
+              </div>
+
+              {/* Nome do Produto */}
               {resultado.nomeProduto && (
-                <p className="text-sm text-muted-foreground">{resultado.nomeProduto}</p>
+                <p className="text-muted-foreground text-center font-medium -mt-1 px-4">
+                  {resultado.nomeProduto}
+                </p>
+              )}
+
+              {/* Destaque para o Código */}
+              {resultado.codigoProduto && (
+                <div className="w-full max-w-[260px] bg-background/80 border-2 border-success/30 rounded-lg p-3 flex flex-col items-center justify-center shadow-sm hover:border-success/50 transition-colors cursor-text group">
+                  <span className="text-[10px] uppercase font-extrabold text-success tracking-widest mb-1 group-hover:text-success/80">
+                    Código do Sistema
+                  </span>
+                  <span className="font-mono text-3xl font-black text-foreground tracking-tighter select-all">
+                    {resultado.codigoProduto}
+                  </span>
+                </div>
               )}
             </div>
           ) : (
             <Button
               size="lg"
-              className="w-full bg-success hover:bg-success/90 text-success-foreground"
+              className="w-full bg-success hover:bg-success/90 text-success-foreground h-12 text-base font-semibold shadow-md transition-all hover:shadow-lg"
               onClick={onCadastrar}
               disabled={isCadastrando}
             >
               <Plus className="mr-2 h-5 w-5" />
-              {isCadastrando ? "Cadastrando..." : "Cadastrar Tinta no Sistema"}
+              {isCadastrando ? "Cadastrando Produto..." : "Cadastrar Tinta no Sistema"}
             </Button>
           )}
         </div>
