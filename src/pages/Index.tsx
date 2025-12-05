@@ -28,6 +28,7 @@ import { calcularPrecoTotalViaApi } from "@/services/pricingService";
 import { useHistoricoConsultas } from "@/hooks/useHistoricoConsultas";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { aplicarRegraPrecoPsicologico } from "@/utils/pricingRules";
 
 const Index = () => {
   const [resultado, setResultado] = useState<ResultadoConsulta | null>(null);
@@ -100,9 +101,9 @@ const Index = () => {
       const cobraST = (tributacao?.id === 1) ? "S" : "N"; 
       const tabelaId = (tabelaPreco?.id === 1) ? 0 : 1;
 
-      let precoVenda = 0;
+      let precoVendaCalculado = 0;
       try {
-        precoVenda = await calcularPrecoTotalViaApi({
+        precoVendaCalculado = await calcularPrecoTotalViaApi({
           base,
           pigmentos: pigmentosComNome,
           codTabela: tabelaId,
@@ -115,6 +116,12 @@ const Index = () => {
         setIsConsultando(false);
         return;
       }
+
+      // === APLICAÇÃO DA REGRA DE NEGÓCIO ===
+      const precoVendaFinal = aplicarRegraPrecoPsicologico(
+        precoVendaCalculado, 
+        form.tabela_preco_id // Usamos o ID do form (2 = Varejo)
+      );
 
       // 3. Verificar se produto já está cadastrado via API
       const payloadVerificacao = {
@@ -154,7 +161,7 @@ const Index = () => {
         tabelaPreco,
         tributacao,
         pigmentos: pigmentosComNome,
-        precoVenda, // Preço vindo da soma das consultas da API
+        precoVenda: precoVendaFinal, // Usamos o preço já ajustado pela regra
         cadastrada: dadosDB.cadastrada, // Status vindo da API
         codigoProduto: dadosDB.codigoProduto,
         nomeProduto: dadosDB.nomeProduto,
