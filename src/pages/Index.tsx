@@ -180,7 +180,7 @@ const Index = () => {
         tamanho: tamanho.nome,
         tabelaPreco: tabelaPreco.nome,
         tributacao: tributacao?.nome,
-        precoVenda,
+        precoVenda: precoVendaFinal,
         cadastrada: dadosDB.cadastrada,
         codigoProduto: dadosDB.codigoProduto,
         timestamp: Date.now(),
