@@ -32,6 +32,9 @@ export const bases: Base[] = [
   { id: 11575, nome: "Super Premium", codigo: "C", volume: "GL" },
   { id: 11573, nome: "Super Premium", codigo: "M", volume: "GL" },
   { id: 11571, nome: "Super Premium", codigo: "P", volume: "GL" },
+  { id: 11581, nome: "Fachada Emborrachada", codigo: "C", volume: "GL" },
+  { id: 11579, nome: "Fachada Emborrachada", codigo: "M", volume: "GL" },
+  { id: 11577, nome: "Fachada Emborrachada", codigo: "P", volume: "GL" },
 
   // Bases de LATA (Alteradas para "BD")
   { id: 11586, nome: "Decoratto Mármore", codigo: "P/M", volume: "BD" },
@@ -50,6 +53,9 @@ export const bases: Base[] = [
   { id: 11576, nome: "Super Premium", codigo: "C", volume: "BD" },
   { id: 11574, nome: "Super Premium", codigo: "M", volume: "BD" },
   { id: 11572, nome: "Super Premium", codigo: "P", volume: "BD" },
+  { id: 11582, nome: "Fachada Emborrachada", codigo: "C", volume: "BD" },
+  { id: 11580, nome: "Fachada Emborrachada", codigo: "M", volume: "BD" },
+  { id: 11578, nome: "Fachada Emborrachada", codigo: "P", volume: "BD" },
 ];
 
 export const tamanhos: Tamanho[] = [
