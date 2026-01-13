@@ -59,6 +59,7 @@ export interface ResultadoConsulta {
   codigoProduto?: string;
   nomeProduto?: string;
   quantidade: number;
+  estoqueBase?: number;
 }
 
 export interface ConsultaForm {

@@ -24,7 +24,7 @@ import {
   getCores,
 } from "@/data/formulaService";
 // Cache removido completamente conforme solicitado
-import { calcularPrecoTotalViaApi } from "@/services/pricingService";
+import { calcularPrecoTotalViaApi, consultarEstoqueBase } from "@/services/pricingService";
 import { useHistoricoConsultas } from "@/hooks/useHistoricoConsultas";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -101,20 +101,24 @@ const Index = () => {
       const cobraST = (tributacao?.id === 1) ? "S" : "N"; 
       const tabelaId = (tabelaPreco?.id === 1) ? 0 : 1;
 
-      let precoVendaCalculado = 0;
-      try {
-        precoVendaCalculado = await calcularPrecoTotalViaApi({
+      // Usando Promise.all para buscar PREÇO e ESTOQUE em paralelo (mais rápido)
+      const [precoVendaCalculado, estoqueBase] = await Promise.all([
+        calcularPrecoTotalViaApi({
           base,
           pigmentos: pigmentosComNome,
           codTabela: tabelaId,
           cobraST
-        });
-      } catch (error) {
-        toast.error("Erro ao calcular preço", { 
-          description: "Não foi possível conectar à API de preços." 
-        });
-        setIsConsultando(false);
-        return;
+        }).catch((err) => {
+          console.error(err);
+          toast.error("Erro ao calcular preço");
+          return 0;
+        }),
+        // Chamada do Estoque
+        consultarEstoqueBase(base.id)
+      ]);
+
+      if (precoVendaCalculado === 0 && !estoqueBase) {
+        // Se falhou gravemente o preço (opcional: abortar ou continuar)
       }
 
       // === APLICAÇÃO DA REGRA DE NEGÓCIO ===
@@ -166,6 +170,7 @@ const Index = () => {
         codigoProduto: dadosDB.codigoProduto,
         nomeProduto: dadosDB.nomeProduto,
         quantidade: quantidade,
+        estoqueBase: estoqueBase,
       };
 
       setResultado(novoResultado);

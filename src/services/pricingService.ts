@@ -8,6 +8,14 @@ interface PrecoResponse {
   sucesso: boolean;
 }
 
+// Interface para a resposta do estoque
+interface EstoqueResponse {
+  codProd: number;
+  estoque: number;
+  sucesso: boolean;
+  mensagem?: string;
+}
+
 interface ConsultarPrecoParams {
   base: Base;
   pigmentos: PigmentoComNome[];
@@ -49,6 +57,32 @@ const fetchPrecoItem = async (
   } catch (error) {
     console.error(`Erro ao consultar preço do produto ${codProd}:`, error);
     throw error;
+  }
+};
+
+export const consultarEstoqueBase = async (codProd: number): Promise<number> => {
+  try {
+    const response = await fetch("/api/consultar-estoque", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        codProd,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn("Falha na requisição de estoque");
+      return 0;
+    }
+
+    const data: EstoqueResponse = await response.json();
+    // Retorna o estoque se houver, ou 0 se não encontrar ou der erro
+    return data.estoque || 0;
+  } catch (error) {
+    console.error(`Erro ao consultar estoque da base ${codProd}:`, error);
+    return 0;
   }
 };
 

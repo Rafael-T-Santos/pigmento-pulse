@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle, Plus, Package, DollarSign } from "lucide-react";
+import { CheckCircle2, AlertCircle, Plus, Package, DollarSign, Warehouse } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,6 +69,21 @@ export const ResultadoCard = ({
             <Badge variant="secondary" className="bg-muted text-muted-foreground border border-border">
               {resultado.base.nome}
             </Badge>
+
+            {/* --- NOVO BALÃO DE ESTOQUE --- */}
+            {/* Exibe apenas se o estoque foi carregado (não undefined) */}
+            {resultado.estoqueBase !== undefined && (
+              <Badge 
+                variant="secondary" 
+                className={`border ${resultado.estoqueBase > 0 
+                  ? "bg-blue-50 text-blue-700 border-blue-200" 
+                  : "bg-red-50 text-red-700 border-red-200"}`}
+              >
+                <Warehouse className="mr-1 h-3 w-3" />
+                Estoque Base: {resultado.estoqueBase}
+              </Badge>
+            )}
+            
             <Badge variant="secondary" className="bg-muted text-muted-foreground border border-border">
               {resultado.tamanho.nome}
             </Badge>
