@@ -35,6 +35,7 @@ export const bases: Base[] = [
   { id: 11581, nome: "Fachada Emborrachada", codigo: "C", volume: "GL" },
   { id: 11579, nome: "Fachada Emborrachada", codigo: "M", volume: "GL" },
   { id: 11577, nome: "Fachada Emborrachada", codigo: "P", volume: "GL" },
+  { id: 12606, nome: "Semibrilho Super Lavavel", codigo: "P", volume: "GL" },
 
   // Bases de LATA (Alteradas para "BD")
   { id: 11586, nome: "Decoratto Mármore", codigo: "P/M", volume: "BD" },
