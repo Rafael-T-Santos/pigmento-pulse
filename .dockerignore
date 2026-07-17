@@ -6,6 +6,5 @@ dist-ssr
 *.local
 *.log
 notes.txt
-*.csv
 .vscode
 .idea

@@ -25,3 +25,5 @@ dist-ssr
 
 notes.txt
 *.csv
+# Exceção: o arquivo de dados das cores/fórmulas é essencial para o app
+!public/formulas_iquine.csv
