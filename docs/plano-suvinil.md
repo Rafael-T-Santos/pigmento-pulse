@@ -257,10 +257,25 @@ Uma linha. É o que faz o Sankhya gravar `... MESA DE BAR SUV IQUINE`.
 2. `nginx.conf`, dentro do `server`:
    ```nginx
    gzip on;
-   gzip_types text/csv text/plain application/json;
+   gzip_types text/csv text/plain text/css application/javascript application/json;
    gzip_min_length 1024;
+
+   # sem isto o gzip_types acima não casa com nada (ver armadilha abaixo)
+   location = /formulas_iquine.csv {
+       default_type text/csv;
+   }
    ```
    A imagem oficial do nginx só comprime `text/html` por padrão — sem isso o CSV vai cru.
+
+   **Armadilha:** o `mime.types` do nginx não tem entrada para `.csv` (conferido no fonte
+   oficial — há `text/plain txt`, `text/css css`, `text/html html htm shtml`, e nada de csv).
+   Sem o `location`, o arquivo sai com o `default_type` da imagem,
+   `application/octet-stream`, e `gzip_types text/csv` não casa com nada: o gzip fica ligado e
+   sem efeito nenhum sobre o arquivo que motivou a mudança. `default_type` dentro do location
+   resolve porque ele só se aplica quando a extensão não determina o tipo.
+
+   Passo seguinte possível (não feito aqui): `gzip_static on` com o `.csv.gz` gerado no
+   Dockerfile. Troca a compressão a cada requisição por uma compressão única no build.
 
 ### Fora de escopo (não mexer)
 
