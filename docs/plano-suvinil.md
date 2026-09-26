@@ -334,11 +334,14 @@ mudança — ou seja, não é regressão desta entrega.
 Após o deploy (`docker compose up -d --build`):
 
 9. `curl -sI -H "Accept-Encoding: gzip" http://192.168.255.6:8081/formulas_iquine.csv` →
-   `Content-Encoding: gzip`. **Ainda não verificado:** não há daemon Docker nesta máquina, então o
-   `nginx.conf` não foi testado nem com `nginx -t`. As três diretivas são válidas em contexto
-   `server`, mas quem fizer o deploy confirma isso primeiro — se o nginx recusar a config, o
-   container não sobe.
+   `Content-Encoding: gzip`. **Verificado no servidor em 26/09/2026:** devolveu
+   `Content-Type: text/csv` e `Content-Encoding: gzip`, ou seja, o `location` com `default_type`
+   resolveu a armadilha do mime.types e o arquivo desce comprimido.
 10. Abrir a tela pelo IP e repetir os itens 2 a 6 no ambiente real.
+    **Verificado em 26/09/2026:** console do servidor mostrou
+    `Cores no seletor: 2574 (IQUINE: 1364, SUVINIL: 1210)`.
+    Atenção ao cache do navegador: na primeira tentativa a tela mostrou `SUVINIL: 0` porque a
+    página não tinha sido recarregada; `Ctrl+Shift+R` resolveu.
 
 ---
 
