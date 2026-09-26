@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getContrast, isValidRGB } from "@/utils/colorUtils";
+import { ColorPreview } from "./ColorPreview";
 
 interface ColorHeaderProps {
   corNome: string;
@@ -31,21 +32,25 @@ export const ColorHeader = ({
     }
   };
 
-  // Fallback to gradient if no valid RGB
-  const backgroundStyle = hasValidRgb
-    ? { backgroundColor: corRgb }
-    : { background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%)' };
+  // Sem hex conhecido não há o que pintar. Antes caía num gradiente da cor
+  // primária do sistema, que o usuário lia como se fosse a cor da tinta; agora
+  // fica neutro e mostra o mesmo marcador de "sem preview" usado no seletor.
+  const backgroundStyle = hasValidRgb ? { backgroundColor: corRgb } : undefined;
 
   return (
     <div
       className={cn(
         "rounded-t-lg p-6 relative overflow-hidden",
-        textColor === 'light' ? "text-white" : "text-gray-900"
+        hasValidRgb
+          ? textColor === 'light' ? "text-white" : "text-gray-900"
+          : "bg-muted text-foreground"
       )}
       style={backgroundStyle}
     >
       {/* Subtle overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+      {hasValidRgb && (
+        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+      )}
       
       <div className="relative z-10 space-y-2">
         <div className="flex items-start justify-between gap-4">
@@ -56,33 +61,43 @@ export const ColorHeader = ({
             </h3>
             <p className={cn(
               "text-sm mt-1",
-              textColor === 'light' ? "text-white/80" : "text-gray-700"
+              hasValidRgb
+                ? textColor === 'light' ? "text-white/80" : "text-gray-700"
+                : "text-muted-foreground"
             )}>
               {baseNome} • {tamanhoNome}
             </p>
           </div>
-          
-          {hasValidRgb && (
+
+          {hasValidRgb ? (
             <Button
               variant="ghost"
               size="sm"
               onClick={copiarRGB}
               className={cn(
                 "shrink-0",
-                textColor === 'light' 
-                  ? "hover:bg-white/20 text-white" 
+                textColor === 'light'
+                  ? "hover:bg-white/20 text-white"
                   : "hover:bg-black/10 text-gray-900"
               )}
             >
               <Copy className="mr-2 h-4 w-4" />
               {corRgb}
             </Button>
+          ) : (
+            // Mesmo quadrado com ícone de paleta que o seletor mostra para esta cor.
+            <div className="shrink-0 flex items-center gap-2 text-sm text-muted-foreground">
+              <ColorPreview rgb={undefined} size="lg" rounded={true} />
+              <span>Sem preview de cor</span>
+            </div>
           )}
         </div>
-        
+
         <div className={cn(
           "flex items-center gap-2 text-sm",
-          textColor === 'light' ? "text-white/70" : "text-gray-600"
+          hasValidRgb
+            ? textColor === 'light' ? "text-white/70" : "text-gray-600"
+            : "text-muted-foreground"
         )}>
           <span>Código: {corCodigo}</span>
           {hasValidRgb && (
