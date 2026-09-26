@@ -109,10 +109,14 @@ Iquine: nulo** — e de brinde saem 11 entradas sem nome do seletor.
 
 ### 2.1 As 107 cores sem base selecionável
 
-Não é defeito do arquivo novo: o `mockBases` não cobre esses produtos/bases, então o app não tem
-`CODPROD` do Sankhya para cotar e a consulta morre no seletor. O filtro é **derivado** do
-`mockBases` em tempo de carga, não uma lista fixa — cadastrar as entradas que faltam em
-`mockData.ts` faz as cores voltarem sozinhas.
+Não é defeito do arquivo nem lacuna de cadastro. **O `mockBases` é a lista das bases que a empresa
+tem fisicamente em estoque**, e o CSV da fábrica traz fórmula para muito mais produto do que isso.
+Base que não está no `mockBases` não se vende, então cor que só existe nessas bases não tem o que
+ser consultado — descartar é o comportamento desejado, não um problema a corrigir.
+
+O filtro é **derivado** do `mockBases` em tempo de carga, não uma lista fixa de exceções. Quando a
+empresa passar a vender uma base nova, o único trabalho é acrescentá-la em `mockData.ts` com o
+`CODPROD` do Sankhya: as cores correspondentes voltam ao seletor sozinhas, sem tocar no filtro.
 
 **21 Iquine**, todas presentes só em produtos ausentes do `mockBases` (Diepóxi Base Água A B,
 Delanil Rende Muito, Diapiso Super Resistente, Dialine Topa Tudo A B):
@@ -274,8 +278,13 @@ Uma linha. É o que faz o Sankhya gravar `... MESA DE BAR SUV IQUINE`.
    sem efeito nenhum sobre o arquivo que motivou a mudança. `default_type` dentro do location
    resolve porque ele só se aplica quando a extensão não determina o tipo.
 
-   Passo seguinte possível (não feito aqui): `gzip_static on` com o `.csv.gz` gerado no
-   Dockerfile. Troca a compressão a cada requisição por uma compressão única no build.
+3. **`gzip_static`** (feito depois, junto da entrega): comprimir 23,6 MB a cada requisição custa CPU
+   por pessoa que abre a tela. O Dockerfile passa a gerar o `.csv.gz` uma vez no build
+   (`gzip -9 -c ... > ...csv.gz`) e o `nginx.conf` ganha `gzip_static on`, que entrega o arquivo
+   pronto. Medido no arquivo real: **23,6 MB → 1,7 MB (7,6%)**, melhor que o nível 1 que o nginx usa
+   comprimindo na hora. O módulo vem compilado na imagem oficial — conferido no `Makefile` do
+   `nginx/pkg-oss`, que lista `--with-http_gzip_static_module`. O original continua na imagem, para
+   cliente que não aceite gzip. Os demais estáticos seguem pelo `gzip on`.
 
 ### Fora de escopo (não mexer)
 
@@ -353,10 +362,10 @@ Após o deploy (`docker compose up -d --build`):
 
 | Risco | Gravidade | Tratamento |
 |---|---|---|
-| CSV de 23,6 MB baixado a cada load | média | gzip resolve a transferência (~4 MB). O parse de 335 mil linhas no navegador continua; se a tela ficar lenta em máquina fraca, o próximo passo é pré-processar o CSV em JSON enxuto no build, ou um endpoint na API. Fora desta entrega. |
+| CSV de 23,6 MB baixado a cada load | baixa | Resolvido pelo `gzip_static`: descem 1,7 MB, comprimidos uma vez no build. O parse de 335 mil linhas no navegador continua; se a tela ficar lenta em máquina fraca, o próximo passo é pré-processar o CSV em JSON enxuto no build, ou um endpoint na API. Fora desta entrega. |
 | Cadastrar Suvinil cujo produto já existe | baixa | `verificar-produto` casa por composição e **não há fórmula repetida entre as coleções**, então não há como uma cor Suvinil ser confundida com uma Iquine já cadastrada. |
-| 21 cores Iquine somem do seletor | baixa | Mudança intencional (decisão 3.4) — hoje elas levam a beco sem saída. Listadas na seção 2.1, com as 86 Suvinil. Se alguém reclamar da falta de uma, a correção certa é cadastrar a base que falta em `mockData.ts`, não reverter o filtro. |
-| Arquivo futuro com produto novo que o `mockBases` não cobre | média | O filtro esconde a cor **em silêncio**. É o que o contador de descartadas no console (4.2.8) serve para denunciar: se pular de 107 para muito mais, falta base no `mockData.ts`. |
+| 21 cores Iquine somem do seletor | baixa | Mudança intencional (decisão 3.4) — hoje elas levam a beco sem saída, porque a empresa não tem essas bases. Listadas na seção 2.1, com as 86 Suvinil. Se alguém reclamar da falta de uma, a pergunta é se a base passou a ser vendida; em caso afirmativo, cadastrar em `mockData.ts` — nunca reverter o filtro. |
+| Arquivo futuro com produto que o `mockBases` não cobre | baixa | O filtro esconde a cor **em silêncio**, que é o comportamento certo (sem base em estoque não há o que vender). O contador de descartadas no console (4.2.8) existe para tornar isso visível: um salto grande a partir de 107 indica que a fábrica mandou linha nova, não que falta cadastro. |
 | `#CCCCCC` deixa de aparecer nas 48 Iquine sem hex que continuam no seletor | baixa | Mudança visual intencional (decisão 3.2). Se incomodar, é reverter um `\|\|`. |
 
 **Rollback:** um `git revert` do commit devolve CSV, código e nginx ao estado atual; rebuildar o
