@@ -327,6 +327,10 @@ O cadastro do item 6 foi exercitado com `window.fetch` stubado no navegador: **n
 máquina e nada foi gravado no Sankhya**. O stub reproduziu a fórmula do `app.py` para conferir o nome
 que o ERP produziria.
 
+**Confirmado em produção (26/09/2026):** uma tinta Suvinil foi cadastrada de verdade pela tela, contra
+a API e o Sankhya, e o cadastro funcionou. Isso fecha o único item que não dava para validar fora do
+ambiente real.
+
 Custo do filtro do seletor sobre as 2.574 cores: **~1 ms por busca**. O resto do tempo de digitação
 (47–580 ms em build de dev) é o render dos itens da lista, que já era limitado a 100 antes da
 mudança — ou seja, não é regressão desta entrega.
