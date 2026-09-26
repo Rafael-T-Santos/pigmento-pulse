@@ -33,12 +33,18 @@ export interface PigmentoFormula {
   quantidade_ml: number;
 }
 
+// Coleções de cor presentes no CSV de fórmulas. A tinta é sempre Iquine; o que
+// muda é a carta de cores de referência.
+export type Colecao = "IQUINE" | "SUVINIL";
+
 export interface Cor {
   id: number;
-  nome: string;
+  nome: string;          // nome como está no CSV, sem sufixo
+  nomeExibicao: string;  // nome + sufixo da coleção — é o que vai para a tela e para o cadastro
+  colecao: Colecao;
   codigo: string;
   codigoDisplay?: string;
-  rgb?: string;
+  rgb?: string;          // ausente quando a cor não tem hex no colorMap
   ativa?: boolean;
 }
 

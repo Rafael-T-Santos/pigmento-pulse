@@ -41,7 +41,8 @@ export const SeletorCorUnificado = ({
     const termoNormalizado = termo.toLowerCase().trim();
 
     return cores.filter((cor) => {
-      const nomeMatch = cor.nome.toLowerCase().includes(termoNormalizado);
+      // Busca pelo nome de exibição para que digitar "SUV" liste as cores Suvinil.
+      const nomeMatch = cor.nomeExibicao.toLowerCase().includes(termoNormalizado);
       const codigoMatch = cor.codigoDisplay?.toLowerCase().includes(termoNormalizado) || 
                           cor.codigo.toLowerCase().includes(termoNormalizado);
       return nomeMatch || codigoMatch;
@@ -82,7 +83,7 @@ export const SeletorCorUnificado = ({
                   rounded={true}
                 />
                 <span className="truncate font-medium">
-                  {corSelecionada.nome} ({corSelecionada.codigoDisplay || corSelecionada.codigo})
+                  {corSelecionada.nomeExibicao} ({corSelecionada.codigoDisplay || corSelecionada.codigo})
                 </span>
               </div>
             ) : (
@@ -132,7 +133,7 @@ export const SeletorCorUnificado = ({
                         rounded={true}
                       />
                       <span className="truncate">
-                        {cor.nome}
+                        {cor.nomeExibicao}
                       </span>
                       <span className="text-xs text-muted-foreground shrink-0">
                         ({cor.codigoDisplay || cor.codigo})

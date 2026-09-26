@@ -179,7 +179,7 @@ const Index = () => {
       // Adicionar ao histórico visual (apenas log de sessão, sem impacto na lógica de negócio)
       const consultaHistorico: ConsultaHistorico = {
         id: `${Date.now()}-${Math.random()}`,
-        cor: cor.nome,
+        cor: cor.nomeExibicao,
         corRgb: cor.rgb,
         base: base.nome,
         tamanho: tamanho.nome,
@@ -218,7 +218,9 @@ const Index = () => {
       // Montagem do payload conforme a nova especificação
       const payloadCadastro = {
         cor: {
-          nome: resultado.cor.nome
+          // nomeExibicao leva o sufixo da coleção (ex. "Mesa de Bar SUV"). O backend
+          // concatena isso na descrição: TINTA <base> <tamanho> <cor> IQUINE.
+          nome: resultado.cor.nomeExibicao
         },
         base: {
           nome: resultado.base.nome,

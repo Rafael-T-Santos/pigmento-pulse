@@ -41,7 +41,7 @@ export const ResultadoCard = ({
   return (
     <Card className="shadow-elevated animate-in fade-in-50 duration-500 overflow-hidden">
       <ColorHeader
-        corNome={resultado.cor.nome}
+        corNome={resultado.cor.nomeExibicao}
         corCodigo={resultado.cor.codigoDisplay || resultado.cor.codigo}
         corRgb={resultado.cor.rgb}
         baseNome={resultado.base.nome}
@@ -62,6 +62,13 @@ export const ResultadoCard = ({
               <Badge variant="default" className="bg-warning text-warning-foreground">
                 <AlertCircle className="mr-1 h-4 w-4" />
                 Não Cadastrada
+              </Badge>
+            )}
+
+            {/* Coleção da carta de cores — só destacada quando não é a padrão */}
+            {resultado.cor.colecao === "SUVINIL" && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary border border-primary/20">
+                {resultado.cor.colecao}
               </Badge>
             )}
 
